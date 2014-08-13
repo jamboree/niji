@@ -14,11 +14,12 @@ On the other hand, niji itself doesn't have the ability to render these paths, i
 Niji can be divided into these submodules:
 
 - *core* - components to make up paths.
-- *graphic* - some common graphics, e.g. `ellipse`, `round_rect`, etc.
+- *graphic* - common graphics, e.g. `ellipse`, `round_rect`, etc.
 - *adapted* - adapted geometry path for Boost.Geometry.
 - *view* - various path adaptors, e.g. `reverse`, `transform`, `stroke`, etc.
-- *support* - traits, some basic geometry, math, utility...
-- *sink* - some predefined backends, e.g. Skia, Direct2D, etc.
+- *algorithm* - path algorithms, e.g. `bounds`, `length`, etc.
+- *support* - traits, basic geometry, math, utility...
+- *sink* - predefined backends, e.g. Skia, Direct2D, etc.
 
 ## Quick Example
 
@@ -32,3 +33,15 @@ iterate(ellipse<double>({100, 100}, 50) | views::dash<double>({6, 2}), sink);
 - `ellipse` is a predefined path generator.
 - `views::dash(pattern)` is a path adaptor that generates dash lines.
 - `sink` is something that receives the path commands.
+
+## Dependencies
+
+- [Boost](http://www.boost.org/)
+
+## License
+
+    Copyright (c) 2014 Jamboree
+
+    Distributed under the Boost Software License, Version 1.0. (See accompanying
+    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+    
