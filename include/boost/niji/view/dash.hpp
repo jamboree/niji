@@ -20,10 +20,11 @@ namespace boost { namespace niji
     template<class T, class Pattern>
     struct dash_view : view<dash_view<T, Pattern>>
     {
-        template<class Path, class...>
+        template<class Path>
         using point_type = point<T>;
         
         Pattern pattern;
+        T offset;
         
         template<class Sink>
         struct adaptor
@@ -35,18 +36,17 @@ namespace boost { namespace niji
     
             void operator()(line_to_t, point<T> const& pt)
             {
-                _dasher.line(pt, _sink);
+                _dasher.line_to(pt, _sink);
             }
     
             void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
             {
-                _dasher.quad(pt1, pt2, _sink);
+                _dasher.quad_to(pt1, pt2, _sink);
             }
     
             void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
             {
-                // TODO
-                BOOST_ASSERT(!"feature not implemented yet");
+                _dasher.cubic_to(pt1, pt2, pt3, _sink);
             }
     
             void operator()(end_poly_t)
@@ -59,7 +59,8 @@ namespace boost { namespace niji
                 _dasher.cut(_sink);
             }
             
-            using iterator_t = typename range_iterator<Pattern const>::type;
+            using iterator_t = typename
+                range_iterator<std::remove_reference_t<Pattern> const>::type;
     
             Sink& _sink;
             detail::dasher<T, iterator_t> _dasher;
@@ -67,8 +68,8 @@ namespace boost { namespace niji
         
         dash_view() = default;
         
-        explicit dash_view(Pattern pattern)
-          : pattern(std::forward<Pattern>(pattern))
+        explicit dash_view(Pattern pattern, T offset = {})
+          : pattern(std::forward<Pattern>(pattern)), offset(offset)
         {}
 
         template<class Path, class Sink>
@@ -76,7 +77,7 @@ namespace boost { namespace niji
         {
             auto i = std::begin(pattern), e = std::end(pattern);
             if (i != e)
-                niji::iterate(path, adaptor<Sink>{sink, {i, e}});
+                niji::iterate(path, adaptor<Sink>{sink, {i, e, offset}});
         }
         
         template<class Path, class Sink>
@@ -95,15 +96,15 @@ namespace boost { namespace niji
 namespace boost { namespace niji { namespace views
 {
     template<class T, class Pattern>
-    inline auto dash(Pattern&& p)
+    inline auto dash(Pattern&& p, as_t<T> offset = {})
     {
-        return dash_view<T, Pattern>{std::forward<Pattern>(p)};
+        return dash_view<T, Pattern>{std::forward<Pattern>(p), offset};
     }
     
     template<class T>
-    inline auto dash(std::initializer_list<as_t<T>> const& p)
+    inline auto dash(std::initializer_list<as_t<T>> const& p, as_t<T> offset = {})
     {
-        return dash_view<T, std::initializer_list<T> const&>{p};
+        return dash_view<T, std::initializer_list<T> const&>{p, offset};
     }
 }}}
 

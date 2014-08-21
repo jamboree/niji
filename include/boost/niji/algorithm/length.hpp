@@ -33,13 +33,13 @@ namespace boost { namespace niji { namespace detail
 
         void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
         {
-            sum += bezier::length(_prev, pt1, pt2);
+            sum += bezier::quad_length(_prev, pt1, pt2);
             _prev = pt2;
         }
 
         void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
         {
-            sum += bezier::length(_prev, pt1, pt2, pt3);
+            sum += bezier::cubic_length(_prev, pt1, pt2, pt3);
             _prev = pt3;
         }
         

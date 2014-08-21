@@ -15,23 +15,23 @@ namespace boost { namespace niji { namespace transforms
     template<class T>
     struct translate
     {
-        T dx, dy;
+        T tx, ty;
 
-        translate(T dx, T dy)
-          : dx(dx), dy(dy)
+        translate(T tx, T ty)
+          : tx(tx), ty(ty)
         {}
 
-        void reset(T dx2, T dy2)
+        void reset(T tx2, T ty2)
         {
-            dx = dx2;
-            dy = dy2;
+            tx = tx2;
+            ty = ty2;
         }
 
         template<class Point>
         point<T> operator()(Point const& pt) const
         {
             using geometry::get;
-            return {get<0>(pt) + dx, get<1>(pt) + dy};
+            return {get<0>(pt) + tx, get<1>(pt) + ty};
         }
     };
 }}}

@@ -11,8 +11,8 @@
 #include <boost/container/vector.hpp>
 #include <boost/container/deque.hpp>
 #include <boost/container/allocator_traits.hpp>
-#include <boost/niji/detail/path.hpp>
 #include <boost/niji/path_fwd.hpp>
+#include <boost/niji/detail/path.hpp>
 
 namespace boost { namespace niji
 {
@@ -153,7 +153,9 @@ namespace boost { namespace niji
 
         // Constructors
         //----------------------------------------------------------------------
-        explicit path(Alloc const& alloc = Alloc()) noexcept
+        path() = default;
+        
+        explicit path(Alloc const& alloc) noexcept
           : nodes_base(alloc), _index_tags(alloc)
         {}
 
@@ -178,6 +180,10 @@ namespace boost { namespace niji
         path(Iter const& begin, Iter const& end, Alloc const& alloc = Alloc())
           : nodes_base(begin, end, alloc) , _index_tags(alloc)
         {}
+        
+        path(std::initializer_list<Node> pts, Alloc const& alloc = Alloc())
+          : nodes_base(pts.begin(), pts.end(), alloc), _index_tags(alloc)
+        {}
 
         template<class Path>
         path& operator=(Path const& other)
@@ -193,7 +199,7 @@ namespace boost { namespace niji
         void iterate(Sink& sink) const
         {
             if (detail::path_iterate_impl(sink, static_cast<nodes_base const&>(*this), _index_tags))
-                sink(end_line_t());
+                sink(command::end_line);
         }
         
         template<class Sink>
@@ -212,10 +218,10 @@ namespace boost { namespace niji
             );
             if (needs_ending)
             {
-                if (tag == end_tag::line)
-                    sink(end_line);
-                else // tag == end_tag::poly
+                if (tag == end_tag::poly)
                     sink(end_poly);
+                else
+                    sink(end_line);
             }
         }
 
@@ -233,9 +239,14 @@ namespace boost { namespace niji
         }
 
         template<class Nodes>
-        void join_range(Nodes const& vs)
+        void join_range(Nodes const& pts)
         {
-            join(vs.begin(), vs.end());
+            join(pts.begin(), pts.end());
+        }
+
+        void join_range(std::initializer_list<Node> pts)
+        {
+            join(pts.begin(), pts.end());
         }
         
         // This is useful for paths that don't start with move_to, in which
@@ -243,15 +254,15 @@ namespace boost { namespace niji
         template<class Path>
         void join_path(Path const& p)
         {
-            cursor cur(*this, is_ended());
-            niji::iterate(p, cur);
+            niji::iterate(p, cursor(*this, is_ended()));
         }
 
-        // niji::path always starts with move_to move_to, so it's same as 'add'
+        // niji::path always starts with move_to.
         template<class Point, class A>
         void join_path(path<Point, A> const& p)
         {
-            add(p);
+            cut();
+            splice(p);
         }
         
         void join_quad(Node const& pt1, Node const& pt2, Node const& pt3)
@@ -266,6 +277,53 @@ namespace boost { namespace niji
             unsafe_cubic_to(pt2, pt3, pt4);
         }
 
+        template<class Path, requires_valid<Path> = true>
+        void add(Path const& p)
+        {
+            niji::iterate(p, cursor(*this, true));
+        }
+
+        template<class Point, class A>
+        void add(path<Point, A> const& p)
+        {
+            join_path(p);
+        }
+
+        template<class Point, class A>
+        void splice(path<Point, A> const& p)
+        {
+            auto offset = nodes_base::size();
+            join(p.begin(), p.end());
+            _index_tags.reserve(_index_tags.size() + p._index_tags.size());
+            for (auto const& i : p._index_tags)
+                _index_tags.emplace_back(i.index + offset, i.tag);
+        }
+
+        template<class Point, class A>
+        void reverse_splice(path<Point, A> const& p)
+        {
+            auto offset = nodes_base::size();
+            join(p.rbegin(), p.rend());
+            
+            auto rit = p._index_tags.end(), rend = p._index_tags.begin();
+            if (rit != rend)
+            {
+                _index_tags.reserve(_index_tags.size() + (rit - rend));
+                char tag = end_tag::line | 4;
+                auto remap = index_tag_t::remap(p.size(), tag);
+                auto i = remap(*--rit);
+                if (i.index)
+                    _index_tags.emplace_back(i.index + offset, i.tag & 3);
+                while (rit != rend)
+                {
+                    i = remap(*--rit);
+                    _index_tags.emplace_back(i.index + offset, i.tag & 3);
+                }
+                if (!(tag & 4))
+                    delimit(static_cast<end_tag>(tag));
+            }
+        }
+        
         void unsafe_quad_to(Node const& pt1, Node const& pt2)
         {
             BOOST_ASSERT(!is_ended());
@@ -283,59 +341,23 @@ namespace boost { namespace niji
             nodes_base::push_back(pt3);
         }
 
-        void delimit(end_tag tag)
-        {
-            if (nodes_base::empty())
-                return;
-
-            auto index = nodes_base::size();
-            if (_index_tags.empty() || _index_tags.back().index != index)
-                _index_tags.emplace_back(index, tag);
-        }
-        
         void close()
         {
-            delimit(end_tag::poly);
+            if (!nodes_base::empty())
+                delimit(end_tag::poly);
         }
 
         void cut()
         {
-            delimit(end_tag::line);
+            if (!nodes_base::empty())
+                delimit(end_tag::line);
         }
 
-        template<class Point, class A>
-        void add(path<Point, A> const& p)
+        void delimit(end_tag tag)
         {
-            cut();
-            splice(p);
-        }
-
-        template<class Path, requires_valid<Path> = true>
-        void add(Path const& p)
-        {
-            cursor cur(*this, true);
-            niji::iterate(p, cur);
-        }
-
-        template<class Point, class A>
-        void splice(path<Point, A> const& p)
-        {
-            using other_nodes_base = typename path<Point, A>::nodes_base;
-            splice_impl(static_cast<other_nodes_base const&>(p), p._index_tags);
-        }
-
-        template<class Point, class A>
-        void reverse_splice(path<Point, A> const& p)
-        {
-            namespace rng = ::boost::adaptors;
-            using other_nodes_base = typename path<Point, A>::nodes_base;
-            char tag = end_tag::line;
-            splice_impl
-            (
-                rng::reverse(static_cast<other_nodes_base const&>(p))
-              , rng::transform(rng::reverse(p._index_tags),
-                    index_tag_t::remap(p.other_nodes_base::size(), tag))
-            );
+            auto index = nodes_base::size();
+            if (_index_tags.empty() || _index_tags.back().index != index)
+                _index_tags.emplace_back(index, tag);
         }
         
         void clear() noexcept
@@ -357,16 +379,6 @@ namespace boost { namespace niji
         }
 
     private:
-        
-        template<class Nodes, class IndexTags>
-        void splice_impl(Nodes const& nodes, IndexTags const& index_tags)
-        {
-            auto offset = nodes_base::size();
-            join_range(nodes);
-            _index_tags.reserve(_index_tags.size() + index_tags.size());
-            for (auto const& i : index_tags)
-                _index_tags.emplace_back(i.index + offset, i.tag);
-        }
 
         index_tag_container _index_tags;
     };

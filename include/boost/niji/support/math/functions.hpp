@@ -7,7 +7,7 @@
 #ifndef BOOST_NIJI_MATH_FUNCTIONS_HPP_INCLUDED
 #define BOOST_NIJI_MATH_FUNCTIONS_HPP_INCLUDED
 
-#include <boost/type_traits/is_floating_point.hpp>
+#include <type_traits>
 #include <boost/niji/support/utility/enable_if.hpp>
 
 namespace boost { namespace niji
@@ -18,7 +18,7 @@ namespace boost { namespace niji
         return a * a + b * b;
     }
 
-    template<class T, enable_if_t<is_floating_point<T>> = true>
+    template<class T, enable_if_t<std::is_floating_point<T>, bool> = true>
     inline bool is_nearly_zero(T val)
     {
         static constexpr T nearly_zero(T(1) / (1 << 12));
@@ -46,6 +46,12 @@ namespace boost { namespace niji
             return 0;
         ratio = r;
         return 1;
+    }
+    
+    template<class T>
+    inline T interpolate(T a, T b, T t)
+    {
+        return a + (b - a) * t;
     }
 }}
 

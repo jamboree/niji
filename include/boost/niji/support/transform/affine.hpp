@@ -7,21 +7,29 @@
 #ifndef BOOST_NIJI_TRANSFORM_AFFINE_HPP_INCLUDED
 #define BOOST_NIJI_TRANSFORM_AFFINE_HPP_INCLUDED
 
-#include <boost/type_traits/decay.hpp>
+#include <type_traits>
 #include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/point.hpp>
 
 namespace boost { namespace niji { namespace transforms
 {
+    template<class T>
+    struct translate;
+    
+    template<class T>
+    struct scale;
+    
+    template<class T>
+    struct rotate;
+    
+    template<class T>
+    struct skew;
+    
     template<class Base>
     struct affine_inverse
     {
-        using result_type = typename decay<Base>::type::result_type;
-        
-        affine_inverse(Base base)
-          : base(base)
-        {}
-        
+        using result_type = typename std::decay_t<Base>::result_type;
+
         template<class Point>
         result_type operator()(Point const& pt) const
         {
@@ -49,15 +57,67 @@ namespace boost { namespace niji { namespace transforms
           : sx(1), shx(), tx()
           , shy(), sy(1), ty()
         {}
+        
+        affine(translate<T> const& m)
+          : sx(1), shx(), tx(m.tx)
+          , shy(), sy(1), ty(m.ty)
+        {}
+        
+        affine(scale<T> const& m)
+          : sx(m.sx), shx(), tx()
+          , shy(), sy(m.sy), ty()
+        {}
 
-        void set_sin_cos(T s, T c)
+        affine(rotate<T> const& m)
+          : sx(m.ca), shx(-m.sa), tx()
+          , shy(m.sa), sy(m.ca), ty()
+        {}
+
+        affine(skew<T> const& m)
+          : sx(1), shx(m.shx), tx()
+          , shy(m.shy), sy(1), ty()
+        {}
+
+        affine& append(translate<T> const& m)
         {
-            sx  = c;
-            shx = -s;
-            shy = s;
-            sy  = c;
+            return this->translate(m.tx, m.ty);
         }
         
+        affine& append(scale<T> const& m)
+        {
+            return this->scale(m.sx, m.sy);
+        }
+        
+        affine& append(rotate<T> const& m)
+        {
+            return this->rotate(m.sa, m.ca);
+        }
+        
+        affine& append(skew<T> const& m)
+        {
+            return this->skew(m.shx, m.shy);
+        }
+
+        affine& prepend(translate<T> const& m)
+        {
+            return this->pre_translate(m.tx, m.ty);
+        }
+
+        affine& prepend(scale<T> const& m)
+        {
+            return this->pre_scale(m.sx, m.sy);
+        }
+        
+        affine& prepend(rotate<T> const& m)
+        {
+            return this->pre_rotate(m.sa, m.ca);
+        }
+        
+        affine& prepend(skew<T> const& m)
+        {
+            return this->pre_skew(m.shx, m.shy);
+        }
+
         affine& translate(T x, T y)
         {
             tx += x;
@@ -255,12 +315,12 @@ namespace boost { namespace niji { namespace transforms
 
         affine_inverse<affine const&> operator~() const&
         {
-            return *this;
+            return {*this};
         }
         
         affine_inverse<affine> operator~() &&
         {
-            return std::move(*this);
+            return {std::move(*this)};
         }
 
         template<class Point>

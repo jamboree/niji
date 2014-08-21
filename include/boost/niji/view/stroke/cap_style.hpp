@@ -17,7 +17,7 @@ namespace boost { namespace niji { namespace detail
 {
     template<class T>
     using cap_style_fn = std::function<void(
-            path<point<T> >&, point<T> const&, vector<T> const&, bool)>;
+            path<point<T>>&, point<T> const&, vector<T> const&, bool)>;
 }}}
 
 namespace boost { namespace niji { namespace cap_styles
@@ -27,7 +27,7 @@ namespace boost { namespace niji { namespace cap_styles
         template<class T>
         void operator()
         (
-            path<point<T> >& path, point<T> const& pt
+            path<point<T>>& path, point<T> const& pt
           , vector<T> const& normal, bool is_line
         ) const
         {
@@ -41,7 +41,7 @@ namespace boost { namespace niji { namespace cap_styles
         template<class T>
         void operator()
         (
-            path<point<T> >& path, point<T> pt
+            path<point<T>>& path, point<T> pt
           , vector<T> const& normal, bool is_line
         ) const
         {
@@ -67,14 +67,14 @@ namespace boost { namespace niji { namespace cap_styles
         template<class T>
         void operator()
         (
-            path<point<T> >& path, point<T> const& pt
+            path<point<T>>& path, point<T> const& pt
           , vector<T> const& normal, bool is_line
         ) const
         {
-#if 0 // cubic not implemented yet
+#if 1
             vector<T> v(vectors::normal_ccw(normal))
-                   , s(normal * constants::cubic_arc_factor<T>())
-                   , sn(vectors::normal_ccw(s));
+                    , s(normal * constants::cubic_arc_factor<T>())
+                    , sn(vectors::normal_ccw(s));
             point<T> pt1(pt + normal), pt2(pt + v), pt3(pt - normal);
             path.join(pt1);
             path.unsafe_cubic_to(pt1 + sn, pt2 + s, pt2);

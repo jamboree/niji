@@ -4,10 +4,10 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef BOOST_NIJI_VIEW_STROKE_HPP_INCLUDED
-#define BOOST_NIJI_VIEW_STROKE_HPP_INCLUDED
+#ifndef BOOST_NIJI_VIEW_OFFSET_HPP_INCLUDED
+#define BOOST_NIJI_VIEW_OFFSET_HPP_INCLUDED
 
-#include <type_traits>
+#include <boost/assert.hpp>
 #include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/utility/as.hpp>
@@ -17,22 +17,20 @@
 
 namespace boost { namespace niji
 {
-    template<class T, class Joiner = join_style<T>, class Capper = cap_style<T>>
-    struct stroke_view : view<stroke_view<T, Joiner, Capper>>
+    template<class T, class Joiner>
+    struct offset_view : view<offset_view<T, Joiner>>
     {
         template<class Path>
         using point_type = point<T>;
         
         T r;
         Joiner joiner;
-        Capper capper;
-        
-        stroke_view() : r() {}
 
-        stroke_view(T r, Joiner joiner, Capper capper)
+        offset_view() : r() {}
+
+        offset_view(T r, Joiner joiner)
           : r(r)
           , joiner(std::forward<Joiner>(joiner))
-          , capper(std::forward<Capper>(capper))
         {}
 
         template<class Sink>
@@ -66,12 +64,11 @@ namespace boost { namespace niji
             
             void operator()(end_line_t)
             {
-                _stroker.cut(true); // TODO
                 _stroker.finish(_sink, _reversed);
             }
 
             Sink& _sink;
-            detail::stroker<T, std::decay_t<Joiner>, std::decay_t<Capper>> _stroker;
+            detail::stroker<T, Joiner, detail::non_capper> _stroker;
             bool _reversed;
         };
         
@@ -80,7 +77,7 @@ namespace boost { namespace niji
         {
             using adaptor_t = adaptor<Sink>;
             if (r)
-                niji::iterate(path, adaptor_t{sink, {r, joiner, capper}, false});
+                niji::iterate(path, adaptor_t{sink, {r, joiner, {}}, false});
         }
 
         template<class Path, class Sink>
@@ -88,23 +85,23 @@ namespace boost { namespace niji
         {
             using adaptor_t = adaptor<Sink>;
             if (r)
-                niji::iterate(path, adaptor_t{sink, {r, joiner, capper}, true});
+                niji::iterate(path, adaptor_t{sink, {r, joiner, {}}, true});
         }
     };
 
-    template<class Path, class T, class Joiner, class Capper>
-    struct path_cache<path_view<Path, stroke_view<T, Joiner, Capper>>>
-      : default_path_cache<path_view<Path, stroke_view<T, Joiner, Capper>>>
+    template<class Path, class T, class Joiner>
+    struct path_cache<path_view<Path, offset_view<T, Joiner>>>
+      : default_path_cache<path_view<Path, offset_view<T, Joiner>>>
     {};
 }}
 
 namespace boost { namespace niji { namespace views
 {
-    template<class T, class Joiner = join_styles::bevel, class Capper = cap_styles::butt>
-    inline stroke_view<T, holder_t<Joiner>, holder_t<Capper>>
-    stroke(as_t<T> r, Joiner&& j = {}, Capper&& c = {})
+    template<class T, class Joiner = join_styles::bevel>
+    inline offset_view<T, holder_t<Joiner>>
+    offset(as_t<T> r, Joiner&& j = {})
     {
-        return {r, std::forward<Joiner>(j), std::forward<Capper>(c)};
+        return {r, std::forward<Joiner>(j)};
     }
 }}}
 

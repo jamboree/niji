@@ -34,6 +34,12 @@ namespace boost { namespace niji { namespace transforms
             sa = sin(radian);
             ca = cos(radian);
         }
+        
+        void reset(T sa2, T ca2)
+        {
+            sa = sa2;
+            ca = ca2;
+        }
 
         template<class Point>
         point<T> operator()(Point const& pt) const

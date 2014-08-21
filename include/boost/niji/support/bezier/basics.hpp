@@ -7,6 +7,7 @@
 #ifndef BOOST_NIJI_BEZIER_BASICS_HPP_INCLUDED
 #define BOOST_NIJI_BEZIER_BASICS_HPP_INCLUDED
 
+#include <algorithm>
 #include <boost/assert.hpp>
 #include <boost/array.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
@@ -14,10 +15,18 @@
 #include <boost/niji/support/vector.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/support/transform/affine.hpp>
+#include <boost/niji/support/transform/rotate.hpp>
 #include <boost/niji/support/math/constants.hpp>
 #include <boost/niji/support/math/functions.hpp>
 #include <boost/niji/support/utility/enable_if.hpp>
 #include <boost/niji/support/utility/pack.hpp>
+
+// N O T E
+// -------
+// Most of the algorithms here are borrowed from Skia, see
+// src/core/SkGeometry.cpp for more detail.
+// Some are from Pomax's excellent article about bezier, see
+// http://pomax.github.io/bezierinfo/.
 
 namespace boost { namespace niji { namespace detail
 {
@@ -26,19 +35,19 @@ namespace boost { namespace niji { namespace detail
     // x2 = C / Q
     //
     template<class T>
-    int find_unit_quad_roots(T a, T b, T c, T roots[2])
+    T* find_unit_quad_roots(T a, T b, T c, T roots[2])
     {
         using std::sqrt;
         using std::swap;
     
         if (a == 0)
-            return valid_unit_divide(-c, b, *roots);
+            return roots + valid_unit_divide(-c, b, *roots);
     
         T* r = roots;
 
         T root = b * b - 4 * a * c;
         if (root < 0 || math::isnan(root)) // complex roots
-            return 0;
+            return roots;
 
         root = sqrt(root);
     
@@ -52,9 +61,11 @@ namespace boost { namespace niji { namespace detail
             else if (roots[0] == roots[1])  // nearly-equal?
                 --r; // skip the double root
         }
-        return r - roots;
+        return r;
     }
     
+    // Find t value for quadratic [a, b, c] = d.
+    // Return 0 if there is no solution within [0, 1)
     template<class T>
     T quad_solve(T a, T b, T c, T d)
     {
@@ -63,29 +74,133 @@ namespace boost { namespace niji { namespace detail
         T B = 2 * (b - a);
         T C = a - d;
     
-        T    roots[2];
-        int  count = find_unit_quad_roots(A, B, C, roots);
-    
-        BOOST_ASSERT(count <= 1);
-        return count == 1 ? roots[0] : 0;
+        T    roots[2] = {};
+        find_unit_quad_roots(A, B, C, roots);
+        return roots[0];
     }
     
+    // Quad'(t) = At + B, where
+    // A = 2(a - 2b + c)
+    // B = 2(b - a)
+    // Solve for t, only if it fits between 0 < t < 1
     template<class T>
-    T find_quad_extrema(T a, T b, T c)
+    T* find_quad_extrema(T a, T b, T c, T tValues[1])
     {
+        return tValues + valid_unit_divide(a - b, a - b - b + c, *tValues);    
+    }
+    
+    // Cubic'(t) = At^2 + Bt + C, where
+    // A = 3(-a + 3(b - c) + d)
+    // B = 6(a - 2b + c)
+    // C = 3(b - a)
+    // Solve for t, keeping only those that fit betwee 0 < t < 1
+    template<class T>
+    T* find_cubic_extrema(T a, T b, T c, T d, T tValues[2])
+    {
+        // we divide A,B,C by 3 to simplify
+        T A = d - a + 3 * (b - c);
+        T B = 2 * (a - b - b + c);
+        T C = b - a;
+        return find_unit_quad_roots(A, B, C, tValues);
+    }
+    
+    // Solve coeff(t) == 0, returning the number of roots that
+    // lie withing 0 < t < 1.
+    // coeff[0]t^3 + coeff[1]t^2 + coeff[2]t + coeff[3]
+    //    
+    // Eliminates repeated roots (so that all tValues are distinct, and are always
+    // in increasing order.
+    template<class T>
+    T* solve_cubic_poly(T const coeff[4], T tValues[3])
+    {
+        using std::acos;
+        using std::sqrt;
+        using std::cos;
+        using std::pow;
         using std::abs;
         
-        // Quad'(t) = At + B, where
-        // A = 2(a - 2b + c)
-        // B = 2(b - a)
-        // Solve for t, only if it fits between 0 < t < 1
-        T t;
-        if (valid_unit_divide(a - b, a - b - b + c, t))
+        if (is_nearly_zero(coeff[0])) // we're just a quadratic
+            return find_unit_quad_roots(coeff[1], coeff[2], coeff[3], tValues);
+    
+        T a, b, c, Q, R;
         {
-            auto interp = [t](T a, T b) { return a + (b - a) * t; };
-            return interp(interp(a, b), interp(b, c));
+            BOOST_ASSERT(coeff[0] != 0);
+            
+            T c0 = coeff[0];
+            a = coeff[1] / c0;
+            b = coeff[2] / c0;
+            c = coeff[3] / c0;
         }
-        return abs(a - b) < abs(b - c) ? a : c;    
+        T a2 = a * a;
+        Q = (a2 - b*3) / 9;
+        R = (2 * a2 * a - 9 * a * b + 27 * c) / 54;
+    
+        T Q3 = Q * Q * Q;
+        T R2MinusQ3 = R * R - Q3;
+        T adiv3 = a / 3;
+    
+        T* roots = tValues;
+        auto next_root = [&roots](T r)
+        {
+            if (0 < r && r < 1)
+                *roots++ = r;
+        };
+    
+        if (R2MinusQ3 < 0) // we have 3 real roots
+        {
+            T theta = acos(R / sqrt(Q3));
+            T neg2RootQ = -2 * sqrt(Q);
+    
+            next_root(neg2RootQ * cos(theta / 3) - adiv3);
+            next_root(neg2RootQ * cos((theta + constants::two_pi<T>()) / 3) - adiv3);
+            next_root(neg2RootQ * cos((theta - constants::two_pi<T>()) / 3) - adiv3);
+    
+            // now sort the roots
+            std::sort(tValues, roots);
+            roots = std::unique(tValues, roots);
+        }
+        else // we have 1 real root
+        {
+            T A = abs(R) + sqrt(R2MinusQ3);
+            A = pow(A, constants::third<T>());
+            if (R > 0)
+                A = -A;
+            if (A != 0)
+                A += Q / A;
+            next_root(A - adiv3);
+        }
+    
+        return roots;
+    }
+    
+    // Looking for F' dot F'' == 0
+    // 
+    // A = b - a
+    // B = c - 2b + a
+    // C = d - 3c + 3b - a
+    // 
+    // F' = 3Ct^2 + 6Bt + 3A
+    // F'' = 6Ct + 6B
+    // 
+    // F' dot F'' -> CCt^3 + 3BCt^2 + (2BB + CA)t + AB
+    template<class T>
+    T* find_cubic_max_curvature(point<T> const src[4], T tValues[3])
+    {
+        auto a = src[1] - src[0];
+        auto b = src[2] - src[1] * 2 - src[0];
+        auto c = src[3] + (src[1] - src[2]) * 3 - src[0];
+        
+        auto sum = [](point<T> const& pt)
+        {
+            return pt.x + pt.y;
+        };
+        
+        T coeff[4] = {sum(c * c), sum(b * c * 3), sum(b * b * 2 + c * a), sum(a * b)};
+    
+        auto it = solve_cubic_poly(coeff, tValues);
+    
+        // now remove extrema where the curvature is zero (mins)
+        return std::remove_if(tValues, it, [](T t) {return !(0 < t && t < 1); });
     }
 
     template<int n, int k, class = void>
@@ -324,13 +439,13 @@ namespace boost { namespace niji { namespace bezier
     }
 
     template<class T>
-    inline T length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
+    inline T quad_length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
     {
         return detail::length_impl<T>(pt1, pt2, pt3);
     }
 
     template<class T>
-    inline T length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3, point<T> const& pt4)
+    inline T cubic_length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3, point<T> const& pt4)
     {
         return detail::length_impl<T>(pt1, pt2, pt3, pt4);
     }
@@ -348,6 +463,8 @@ namespace boost { namespace niji { namespace bezier
     template<class T>
     void chop_quad_at(point<T> const in[3], point<T> out[5], T t)
     {
+        BOOST_ASSERT(0 <= t && t <= 1);
+        
         out[0] = in[0];
         out[1] = points::interpolate(in[0], in[1], t);
         out[3] = points::interpolate(in[1], in[2], t);
@@ -366,18 +483,17 @@ namespace boost { namespace niji { namespace bezier
         );
     }
 
-    //  F(t)    = a (1 - t) ^ 2 + 2 b t (1 - t) + c t ^ 2
-    //  F'(t)   = 2 (b - a) + 2 (a - 2b + c) t
-    //  F''(t)  = 2 (a - 2b + c)
+    // F(t)    = a (1 - t) ^ 2 + 2 b t (1 - t) + c t ^ 2
+    // F'(t)   = 2 (b - a) + 2 (a - 2b + c) t
+    // F''(t)  = 2 (a - 2b + c)
     //
-    //  A = 2 (b - a)
-    //  B = 2 (a - 2b + c)
+    // A = 2 (b - a)
+    // B = 2 (a - 2b + c)
     //
-    //  Maximum curvature for a quadratic means solving
-    //  Fx' Fx'' + Fy' Fy'' = 0
+    // Maximum curvature for a quadratic means solving
+    // Fx' Fx'' + Fy' Fy'' = 0
     //
-    //  t = - (Ax Bx + Ay By) / (Bx ^ 2 + By ^ 2)
-    //  
+    // t = - (Ax Bx + Ay By) / (Bx ^ 2 + By ^ 2)
     template<class T>
     bool chop_quad_at_max_curvature(point<T> const in[3], point<T> out[5])
     {
@@ -398,7 +514,6 @@ namespace boost { namespace niji { namespace bezier
     // the new off-curve point and endpoint into 'dest'.
     // Should only return false if the computed pos is the start of the curve
     // (i.e. root == 0)
-    //
     template<class T>
     bool truncate_quad_at(point<T> quad[3], point<T> const& pt)
     {
@@ -430,17 +545,16 @@ namespace boost { namespace niji { namespace bezier
         }
         else
         {
-            /*  t == 0 means either the value triggered a root outside of [0, 1)
-                For our purposes, we can ignore the <= 0 roots, but we want to
-                catch the >= 1 roots (which given our caller, will basically mean
-                a root of 1, give-or-take numerical instability). If we are in the
-                >= 1 case, return the existing offCurve point.
-    
-                The test below checks to see if we are close to the "end" of the
-                curve (near base[4]). Rather than specifying a tolerance, I just
-                check to see if value is on to the right/left of the middle point
-                (depending on the direction/sign of the end points).
-            */
+            // t == 0 means either the value triggered a root outside of [0, 1)
+            // For our purposes, we can ignore the <= 0 roots, but we want to
+            // catch the >= 1 roots (which given our caller, will basically mean
+            // a root of 1, give-or-take numerical instability). If we are in the
+            // >= 1 case, return the existing offCurve point.
+            //    
+            // The test below checks to see if we are close to the "end" of the
+            // curve (near base[4]). Rather than specifying a tolerance, I just
+            // check to see if value is on to the right/left of the middle point
+            // (depending on the direction/sign of the end points).
             if ((base[0] < base[4] && value > base[2]) ||
                 (base[0] > base[4] && value < base[2]))   // should root have been 1
             {
@@ -515,8 +629,7 @@ namespace boost { namespace niji { namespace bezier
 
             point_count = whole_count + 1;
         }
-        transforms::affine<T> affine;
-        affine.set_sin_cos(u_start.y, u_start.x);
+        transforms::affine<T> affine(transforms::rotate<T>(u_start.y, u_start.x));
         if (!is_ccw)
             affine.pre_flip_y();
         if (mat)
@@ -525,6 +638,83 @@ namespace boost { namespace niji { namespace bezier
         for ( ; it != end; ++it)
             *it = affine(*it);
         return it;
+    }
+    
+
+    
+    template<class T>
+    void chop_cubic_at_half(point<T> const in[4], point<T> out[7])
+    {
+        auto bc = points::middle(in[1], in[2]);
+    
+        out[0] = in[0];
+        out[1] = points::middle(in[0], in[1]);
+        out[2] = points::middle(out[1], bc);
+        out[5] = points::middle(in[2], in[3]);
+        out[4] = points::middle(bc, out[5]);
+        out[3] = points::middle(out[2], out[4]);
+        out[6] = in[3];
+    }
+    
+    template<class T>
+    void chop_cubic_at(point<T> const in[4], point<T> out[7], T t)
+    {
+        BOOST_ASSERT(0 <= t && t <= 1);
+        
+        auto bc = points::interpolate(in[1], in[2], t);
+    
+        out[0] = in[0];
+        out[1] = points::interpolate(in[0], in[1], t);
+        out[2] = points::interpolate(out[1], bc, t);
+        out[5] = points::interpolate(in[2], in[3], t);
+        out[4] = points::interpolate(bc, out[5], t);
+        out[3] = points::interpolate(out[2], out[4], t);
+        out[6] = in[3];
+    }
+    
+    template<class T>
+    void chop_cubic_at(point<T> const in[4], point<T> out[], T* tit, T* tend)
+    {
+        if (!out)
+            return;
+            
+        if (tit == tend)
+        {
+            std::copy(in, in + 4, out);
+            return;
+        }
+        
+        point<T> tmp[4];
+        T t = *tit;
+        T* end = tend - 1;
+        for ( ; tit != end; ++tit)
+        {
+            chop_cubic_at(in, out, t);
+            out += 3;
+            // have src point to the remaining cubic (after the chop)
+            std::copy(out, out + 4, tmp);
+            in = tmp;
+            
+            // watch out in case the renormalized t isn't in range
+            if (!valid_unit_divide(tit[1] - *tit, 1 - *tit, t))
+            {
+                // if we can't, just create a degenerate cubic
+                out[4] = out[5] = out[6] = in[3];
+                break;
+            }
+        }
+        chop_cubic_at(in, out, t);
+    }
+    
+    template<class T>
+    int chop_cubic_at_max_curvature(point<T> const in[4], point<T> out[13], T tValues[3])
+    {
+        auto it = detail::find_cubic_max_curvature(in, tValues);
+        if (it == tValues)
+            std::copy(in, in + 4, out);
+        else
+            chop_cubic_at(in, out, tValues, it);
+        return it - tValues + 1;
     }
 }}}
 

@@ -4,8 +4,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef BOOST_NIJI_TRANSFORM_SCALE_HPP_INCLUDED
-#define BOOST_NIJI_TRANSFORM_SCALE_HPP_INCLUDED
+#ifndef BOOST_NIJI_TRANSFORM_SKEW_HPP_INCLUDED
+#define BOOST_NIJI_TRANSFORM_SKEW_HPP_INCLUDED
 
 #include <boost/geometry/core/access.hpp>
 #include <boost/niji/support/point.hpp>
@@ -13,34 +13,26 @@
 namespace boost { namespace niji { namespace transforms
 {
     template<class T>
-    struct scale
+    struct skew
     {
-        T sx, sy;
-        
-        explicit scale(T scale)
-          : sx(scale), sy(scale)
+        T shx, shy;
+
+        skew(T shx, T shy)
+          : shx(shx), shy(shy)
         {}
-        
-        scale(T sx, T sy)
-          : sx(sx), sy(sy)
-        {}
-        
-        void reset(T scale)
+
+        void reset(T shx2, T shy2)
         {
-            sx = sy = scale;
-        }
-        
-        void reset(T sx2, T sy2)
-        {
-            sx = sx2;
-            sy = sy2;
+            shx = shx2;
+            shy = shy2;
         }
         
         template<class Point>
         point<T> operator()(Point const& pt) const
         {
             using geometry::get;
-            return {get<0>(pt) * sx, get<1>(pt) * sy};
+            auto x = get<0>(pt), y = get<1>(pt);
+            return {x + shx * y, y + shy * x};
         }
     };
 }}}

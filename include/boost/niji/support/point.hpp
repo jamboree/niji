@@ -112,6 +112,14 @@ namespace boost { namespace niji
             y *= val;
             return *this;
         }
+
+        template<class U>
+        point& operator*=(point<U> const& other)
+        {
+            x *= other.x;
+            y *= other.y;
+            return *this;
+        }
         
         template<class U>
         point<std::common_type_t<T, U>>
@@ -122,19 +130,43 @@ namespace boost { namespace niji
         }
         
         template<class U>
+        point<std::common_type_t<T, U>>
+        operator*(point<U> const& other) const
+        {
+            point<std::common_type_t<T, U>> ret(*this);
+            return ret *= other;
+        }
+        
+        template<class U>
         point& operator/=(U const& val)
         {
             x /= val;
             y /= val;
             return *this;
         }
-
+        
+        template<class U>
+        point& operator/=(point<U> const& other)
+        {
+            x /= other.x;
+            y /= other.y;
+            return *this;
+        }
+        
         template<class U>
         point<std::common_type_t<T, U>>
         operator/(U const& val) const
         {
             point<std::common_type_t<T, U>> ret(*this);
             return ret /= val;
+        }
+        
+        template<class U>
+        point<std::common_type_t<T, U>>
+        operator/(point<U> const& other) const
+        {
+            point<std::common_type_t<T, U>> ret(*this);
+            return ret /= other;
         }
         
         template<class Archive>

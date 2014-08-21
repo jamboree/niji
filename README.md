@@ -5,9 +5,9 @@ niji
 
 ## Introduction
 
-Niji is a generic library for 2D path manipulation, in a sense like STL/Boost.Range, which provides containers, range generators, range adaptors and algorithms. Niji provides path containers, path generators (graphics), path adaptors (views) and path algorithms.
+Niji is a generic library for 2D graphical path manipulation, in a sense like STL/Boost.Range, which provides containers, range generators, range adaptors and algorithms, while niji provides path containers, path generators (graphics), path adaptors (views) and path algorithms.
 
-On the other hand, niji itself doesn't have the ability to render these paths, it's expected to work with some *real* graphic engine, which can do the rendering either on-screen or off-screen.
+On the other hand, niji itself doesn't have the ability to render these paths, it's expected to work with real graphic engines, which can do the rendering either on-screen or off-screen.
 
 ## Overview
 
@@ -30,8 +30,8 @@ iterate(ellipse<double>({100, 100}, 50) | views::dash<double>({6, 2}), sink);
 ```
 - all components reside in namespace `boost::niji`.
 - `iterate(path, sink)` is a utility function that sends the path commands to sink.
-- `ellipse` is a predefined path generator.
-- `views::dash(pattern)` is a path adaptor that generates dash lines.
+- `ellipse<T>` is a predefined path generator.
+- `views::dash<T>(pattern)` returns a path adaptor that generates dash lines.
 - `sink` is something that receives the path commands.
 
 ## Dependencies

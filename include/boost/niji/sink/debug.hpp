@@ -4,8 +4,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef BOOST_NIJI_PRINTER_HPP_INCLUDED
-#define BOOST_NIJI_PRINTER_HPP_INCLUDED
+#ifndef BOOST_NIJI_SINK_DEBUG_HPP_INCLUDED
+#define BOOST_NIJI_SINK_DEBUG_HPP_INCLUDED
 
 #include <iostream>
 #include <boost/niji/support/command.hpp>
@@ -13,11 +13,11 @@
 
 namespace boost { namespace niji
 {
-    struct printer
+    struct debug_sink
     {
         std::ostream& out;
         
-        explicit printer(std::ostream& out)
+        explicit debug_sink(std::ostream& out)
           : out(out)
         {}
         

@@ -35,11 +35,11 @@ namespace boost { namespace niji { namespace detail
           : index(index), tag(tag)
         {}
         
-        bool is_end() const
+        bool is_end_tag() const
         {
-            return !(tag >> 1); // i.e. tag < 2
+            return !(tag >> 1);
         }
-        
+
         template<class Archive>
         void serialize(Archive & ar, unsigned version)
         {
@@ -51,14 +51,14 @@ namespace boost { namespace niji { namespace detail
             return [max, &end](index_tag_t ret)
             {
                 ret.index = max - ret.index;
-                if (ret.is_end())
+                if (ret.is_end_tag())
                     std::swap(ret.tag, end);
                 else // curve-tag
                     ret.index -= 1 + (ret.tag == 3);
                 return ret;
             };
         }
-        
+
         static auto remap_no_end(std::size_t max)
         {
             return [max](index_tag_t ret)
@@ -68,14 +68,14 @@ namespace boost { namespace niji { namespace detail
             };
         }
     };
-
-    struct index_tag_is_end
+    
+    inline auto index_tag_is_end()
     {
-        bool operator()(index_tag_t const& a) const
+        return [](index_tag_t const& a)
         {
-            return a.is_end();
-        }
-    };
+            return a.is_end_tag();
+        };
+    }
 
     template<class Sink, class Nodes, class IndexTags>
     bool path_iterate_impl
@@ -105,12 +105,12 @@ namespace boost { namespace niji { namespace detail
                 continue;
             switch (i.tag)
             {
-            case end_tag::line:
-                sink(end_line);
-                heading = true;
-                break;
             case end_tag::poly:
                 sink(end_poly);
+                heading = true;
+                break;
+            case end_tag::line:
+                sink(end_line);
                 heading = true;
                 break;
             case 2:
@@ -369,7 +369,7 @@ namespace boost { namespace niji { namespace detail
             {
                 std::size_t offset = 0;
                 auto tlast = _tlast;
-                if (tlast != _tit && tlast->is_end())
+                if (tlast != _tit && tlast->is_end_tag())
                 {
                     offset = tlast->index << 1;
                     ++tlast;

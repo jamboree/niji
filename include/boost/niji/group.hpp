@@ -81,14 +81,14 @@ namespace boost { namespace niji
         {
             for (auto const& path : *this)
                 niji::iterate(path, sink);
-        };
+        }
 
         template<class Sink>
         void reverse_iterate(Sink& sink) const
         {
             for (auto const& path : *this)
                 niji::reverse_iterate(path, sink);
-        };
+        }
 
         template<class Archive>
         void serialize(Archive & ar, unsigned version)

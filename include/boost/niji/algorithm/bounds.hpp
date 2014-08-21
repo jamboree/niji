@@ -50,8 +50,8 @@ namespace boost { namespace niji { namespace detail
 
         void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
         {
-            // TODO
-            BOOST_ASSERT_MSG(false, "feature not implemented yet");
+            line_start();
+            adjust_cubic(_prev, pt1, pt2, pt3);
         }
         
         void operator()(end_tag) {}
@@ -80,6 +80,15 @@ namespace boost { namespace niji { namespace detail
                 adjust_coord<1>(c.y);
             _prev = c;
         }
+
+        void adjust_cubic(point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
+        {
+            if (b.x < min.x || b.x > max.x || c.x < min.x || c.x > max.x)
+                adjust_cubic_coord<0>(a, b, c, d);
+            if (b.y < min.y || b.y > max.y || c.y < min.y || c.y > max.y)
+                adjust_cubic_coord<1>(a, b, c, d);
+            adjust(d);
+        }
         
         template<int n>
         void adjust_quad_coord(point<T> const& a, point<T> const& b, point<T> const& c)
@@ -89,8 +98,10 @@ namespace boost { namespace niji { namespace detail
 
             T aa = get<n>(a), bb = get<n>(b), cc = get<n>(c);
             if (aa == bb || cc == bb)
+            {
                 adjust_coord<n>(cc);
-            
+                return;
+            }
             if (aa > bb)
             {
                 if (cc < bb && cc < get<n>(min))
@@ -104,7 +115,39 @@ namespace boost { namespace niji { namespace detail
                 set<n>(max, cc);
                 return;
             }
-            adjust_coord<n>(find_quad_extrema(aa, bb, cc));
+            T t;
+            T* end = find_quad_extrema(aa, bb, cc, &t);
+            if (&t != end)
+            {
+                T ab = interpolate(aa, bb, t);
+                T bc = interpolate(bb, cc, t);
+                adjust_coord<n>(interpolate(ab, bc, t));
+            }
+        }
+        
+        template<int n>
+        void adjust_cubic_coord(point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
+        {
+            using geometry::get;
+            using geometry::set;
+
+            T aa = get<n>(a), bb = get<n>(b), cc = get<n>(c), dd = get<n>(d);
+            T lo = aa, hi = dd;
+            if (hi < lo)
+                std::swap(hi, lo);
+            if (lo <= bb && bb <= hi && lo <= cc && cc <= hi)
+                return;
+
+            T extrama[2];
+            T* end = find_cubic_extrema(aa, bb, cc, dd, extrama);
+            for (T* it = extrama; it != end; ++it)
+            {
+                T t = *it;
+                T bc = interpolate(bb, cc, t);
+                T abc = interpolate(interpolate(aa, bb, t), bc, t);
+                T bcd = interpolate(bc, interpolate(cc, dd, t), t);
+                adjust_coord<n>(interpolate(abc, bcd, t));
+            }
         }
         
         void adjust(point<T> const& pt)
@@ -150,6 +193,7 @@ namespace boost { namespace niji
     auto bounds(Path const& path)
     {
         using coord_t = path_coordinate_t<Path>;
+        using point_t = point<coord_t>;
         detail::bounds_calc<coord_t> bounds;
         niji::iterate(path, bounds);
         return box<point_t>(bounds.min, bounds.max);

@@ -14,9 +14,16 @@
 #include <boost/niji/support/bezier/basics.hpp>
 
 #define BOOST_NIJI_MAX_QUAD_SUBDIVIDE 5
+#define BOOST_NIJI_MAX_CUBIC_SUBDIVIDE 7
 
 namespace boost { namespace niji { namespace detail
 {
+    struct non_capper
+    {
+        template<class... Ts>
+        void operator()(Ts&&...) const {}
+    };
+    
     template<class T, class Joiner, class Capper>
     struct stroker
     {
@@ -86,7 +93,8 @@ namespace boost { namespace niji { namespace detail
 #endif
                 {
                     _outer.join(_prev_pt + normal);
-                    _inner.join(_prev_pt - normal);
+                    if (!std::is_same<Capper, non_capper>::value)
+                        _inner.join(_prev_pt - normal);
                 }
             }
             _prev_is_line = curr_is_line;
@@ -104,7 +112,8 @@ namespace boost { namespace niji { namespace detail
         {
 #ifndef JAMBOREE
             _outer.join(pt + normal);
-            _inner.join(pt - normal);
+            if (!std::is_same<Capper, non_capper>::value)
+                _inner.join(pt - normal);
 #endif
         }
 
@@ -130,7 +139,7 @@ namespace boost { namespace niji { namespace detail
 
         void close(bool curr_is_line)
         {
-            if (_seg_count < 2)
+            if (_seg_count < 1)
             {
                 if (_seg_count == -1)
                     degenerated_dot();
@@ -145,11 +154,12 @@ namespace boost { namespace niji { namespace detail
               , std::min(_pre_magnitude, _first_magnitude)
             );
             _outer.close();
-            _inner.close();
-            _outer.reverse_splice(_inner);
-            _outer.close();
-
-            _inner.clear();
+            if (!std::is_same<Capper, non_capper>::value)
+            {
+                _inner.close();
+                _outer.reverse_splice(_inner);
+                _inner.clear();
+            }
         }
 
         void quad_to(point_t const& pt1, point_t const& pt2)
@@ -177,11 +187,13 @@ namespace boost { namespace niji { namespace detail
                         _outer.join(tmp[2] + normalBC);
                         _outer.join(tmp[4] + normalBC);
                         
-                        _inner.join(tmp[2] - normalAB);
-                        _inner.join(tmp[2] - normalBC);
-                        _inner.join(tmp[4] - normalBC);
-                        
-                        // Add circle???
+                        if (!std::is_same<Capper, non_capper>::value)
+                        {
+                            _inner.join(tmp[2] - normalAB);
+                            _inner.join(tmp[2] - normalBC);
+                            _inner.join(tmp[4] - normalBC);
+                            // Add circle???                   
+                        }
                     }
                     else
                     {
@@ -194,6 +206,34 @@ namespace boost { namespace niji { namespace detail
                     quad_to_stroke(pts, normalAB, normalBC, BOOST_NIJI_MAX_QUAD_SUBDIVIDE);
             }
             post_join(pt2, normalBC);
+        }
+        
+        void cubic_to(point_t const& pt1, point_t const& pt2, point_t const& pt3)
+        {
+            bool degenerateAB = vectors::is_degenerated(pt1 - _prev_pt);
+            bool degenerateBC = vectors::is_degenerated(pt2 - pt1);
+            bool degenerateCD = vectors::is_degenerated(pt3 - pt2);
+            
+            if (degenerateAB + degenerateBC + degenerateCD >= 2)
+            {
+                line_to(pt3);
+                return;
+            }
+            vector_t normalAB, normalCD;
+            pre_join(degenerateAB? pt2 : pt1, normalAB, false);
+            {
+                point_t pts[4] = {_prev_pt, pt1, pt2, pt3}, tmp[13];
+                T ts[3];
+                auto count = bezier::chop_cubic_at_max_curvature(pts, tmp, ts);
+                vector_t normal(normalAB);
+                auto pos = tmp, end = tmp + 3 * count;
+                for ( ; pos != end; pos += 3)
+                {
+                    cubic_to_stroke(pos, normal, normalCD, BOOST_NIJI_MAX_CUBIC_SUBDIVIDE);
+                    normal = normalCD;
+                }
+            }
+            post_join(pt3, normalCD);
         }
         
         void quad_to_stroke(point_t const pts[3], vector_t const& normalAB, vector_t& normalBC, int subdivide)
@@ -218,13 +258,84 @@ namespace boost { namespace niji { namespace detail
             else
             {
                 normalBC = normalBC * _r / vectors::norm(normalBC);
-                vector_t normal(vectors::normal_cw(pts[2] - pts[0]));
+                vector_t normalB(vectors::normal_cw(pts[2] - pts[0]));
                 T dot = vectors::dot(normalAB, normalBC);
-                T ns = vectors::norm_square(normal);
-                T s = sqrt(vectors::norm_square(normalAB) * vectors::norm_square(normalBC));
-                normal = normal * _r / sqrt((dot + s) * ns / (2 * s));
-                _outer.unsafe_quad_to(pts[1] + normal, pts[2] + normalBC);
-                _inner.unsafe_quad_to(pts[1] - normal, pts[2] - normalBC);
+                T ns = vectors::norm_square(normalB);
+                T rs = _r * _r;
+                normalB = normalB * _r / sqrt((dot + rs) * ns / (2 * rs));
+                _outer.unsafe_quad_to(pts[1] + normalB, pts[2] + normalBC);
+                if (!std::is_same<Capper, non_capper>::value)
+                    _inner.unsafe_quad_to(pts[1] - normalB, pts[2] - normalBC);
+            }
+        }
+        
+        void cubic_to_stroke(point_t const pts[4], vector_t const& normalAB, vector_t& normalCD, int subdivide)
+        {
+            using std::sqrt;
+            
+            vector_t AB = pts[1] - pts[0];
+            vector_t CD = pts[3] - pts[2];
+
+            bool degenerateAB = vectors::is_degenerated(AB);
+            bool degenerateCD = vectors::is_degenerated(CD);
+            
+            auto stroke = [&]
+            {
+                line_to_stroke(pts[3], normalAB);
+                normalCD = normalAB;
+            };
+            
+            if (degenerateAB & degenerateCD)
+                return stroke();
+
+            if (degenerateAB)
+            {
+                AB = pts[2] - pts[0];
+                degenerateAB = vectors::is_degenerated(AB);
+            }
+            if (degenerateCD)
+            {
+                CD = pts[3] - pts[1];
+                degenerateCD = vectors::is_degenerated(CD);
+            }
+            if (degenerateAB | degenerateCD)
+                return stroke();
+            
+            normalCD = vectors::normal_cw(CD) * _r / vectors::norm(CD);
+            vector_t normalBC(vectors::normal_cw(pts[2] - pts[1]));
+            bool degenerateBC = vectors::is_degenerated(normalBC);
+            
+            if (degenerateBC || vectors::too_curvy(normalAB, normalBC) ||
+                vectors::too_curvy(normalBC, normalCD))
+            {
+                if (!subdivide--)
+                    return stroke();
+
+                point_t tmp[7];
+                vector_t normal, dummy;
+        
+                bezier::chop_cubic_at_half(pts, tmp);
+                cubic_to_stroke(tmp, normalAB, normal, subdivide);
+                // we use dummys since we already have a valid (and more accurate)
+                // normals for CD
+                cubic_to_stroke(tmp + 3, normal, dummy, subdivide);
+            }
+            else
+            {
+                normalBC = normalBC * _r / vectors::norm(normalBC);
+                vector_t normalB(normalAB + normalBC), normalC(normalCD + normalBC);
+
+                T rs = _r * _r, rs2 = 2 * rs;
+                T dot = vectors::dot(normalAB, normalBC);
+                T ns = vectors::norm_square(normalB);
+                normalB = normalB * _r / sqrt((dot + rs) * ns / rs2);
+                dot = vectors::dot(normalCD, normalBC);
+                ns = vectors::norm_square(normalC);
+                normalC = normalC * _r / sqrt((dot + rs) * ns / rs2);
+
+                _outer.unsafe_cubic_to(pts[1] + normalB, pts[2] + normalC, pts[3] + normalCD);
+                if (!std::is_same<Capper, non_capper>::value)
+                    _inner.unsafe_cubic_to(pts[1] - normalB, pts[2] - normalC, pts[3] - normalCD);
             }
         }
         
@@ -246,5 +357,8 @@ namespace boost { namespace niji { namespace detail
         }
     };
 }}}
+
+#undef BOOST_NIJI_MAX_QUAD_SUBDIVIDE
+#undef BOOST_NIJI_MAX_CUBIC_SUBDIVIDE
 
 #endif
