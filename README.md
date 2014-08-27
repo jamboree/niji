@@ -34,6 +34,10 @@ iterate(ellipse<double>({100, 100}, 50) | views::dash<double>({6, 2}), sink);
 - `views::dash<T>(pattern)` returns a path adaptor that generates dash lines.
 - `sink` is something that receives the path commands.
 
+## Documentation
+- [Tutorial](https://github.com/jamboree/niji/wiki/Tutorial)
+- Reference
+
 ## Dependencies
 
 - [Boost](http://www.boost.org/)
