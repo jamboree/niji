@@ -16,7 +16,7 @@
 namespace boost { namespace niji
 {
     template<>
-    struct geometry_iterate<geometry::linestring_tag>
+    struct geometry_iterate<geometry::linestring_tag, geometry::counterclockwise>
     {
         template<class Linestring, class Sink>
         static void apply(Linestring const& linestring, Sink& sink)
@@ -35,6 +35,11 @@ namespace boost { namespace niji
         }
     };
     
+    template<>
+    struct geometry_iterate<geometry::linestring_tag, geometry::clockwise>
+      : geometry_iterate<geometry::linestring_tag, geometry::counterclockwise>
+    {};
+
     template<geometry::order_selector order>
     struct geometry_iterate<geometry::multi_linestring_tag, order>
       : multi_geometry_iterate<geometry::linestring_tag, order>

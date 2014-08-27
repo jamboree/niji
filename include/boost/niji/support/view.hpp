@@ -39,17 +39,17 @@ namespace boost { namespace niji
     template<class Derived>
     struct view
     {
-        template<class Path, class... Ts>
+        template<class Path>
         using point_type = typename path_point<Path>::type;
 
-        template<class Path, class Sink, class... Ts>
-        void reverse_iterate(Path const& path, Sink& sink, Ts const&... ts) const
+        template<class Path, class Sink>
+        void reverse_iterate(Path const& path, Sink& sink) const
         {
-            using point_t = typename path_point<Path>::type;
+            using point_t = typename Derived::template point_type<Path>;
             
             niji::path<point_t> tmp;
             typename niji::path<point_t>::cursor join(tmp, true);
-            Derived::iterate(path, join, ts...);
+            Derived::iterate(path, join);
             tmp.reverse_iterate(sink);
         }
     };
