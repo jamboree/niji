@@ -30,7 +30,7 @@ namespace boost { namespace niji
         template<class Sink>
         void iterate(Sink& sink) const
         {
-            iterate_impl(sink, origin, r / 8, n);
+            iterate_impl(sink, origin, r, n);
         }
         
         template<class Sink>
@@ -42,13 +42,17 @@ namespace boost { namespace niji
     private:
          
         template<class Sink>
-        static void iterate_impl(Sink& sink, point_type const& o, T rr, int n)
+        static void iterate_impl(Sink& sink, point_type const& o, T r, int n)
         {
             using namespace command;
 
-            T ss = rr * constants::tan_pi_over_8<T>(),
-              mm = rr * constants::root2_over_2<T>(),
-              r = rr, s = ss, m = mm;
+            sink(move_to, o);
+#   if defined(BOOST_NIJI_NO_CUBIC_APPROX)
+            r /= 8;
+            
+            T ss = r * constants::tan_pi_over_8<T>(),
+              mm = r * constants::root2_over_2<T>(),
+              rr = r, s = ss, m = mm;
 
             point_type pt;
             auto q1 = [&](T x, T y)
@@ -61,7 +65,6 @@ namespace boost { namespace niji
                 sink(quad_to, o + pt, point_type{o.x + x, o.y + y});
                 r += rr, s += ss, m += mm;
             };
-            sink(move_to, o);
             for (int i = 0; i != n; ++i)
             {
                 q1(r, s), q2(m, m);
@@ -73,6 +76,36 @@ namespace boost { namespace niji
                 q1(s, -r), q2(m, -m);
                 q1(r, -s), q2(r, 0);
             }
+#   else
+            r /= 6; // near 1/6, good enough
+            
+            T ss = r * constants::cubic_arc_factor<T>(),
+              rr = r, s = ss;
+
+            point_type pt1, pt2;
+            auto c1 = [&](T x, T y)
+            {
+                pt1.reset(x, y);
+                r += rr, s += ss;
+            };
+            auto c2 = [&](T x, T y)
+            {
+                pt2.reset(x, y);
+                r += rr, s += ss;
+            };
+            auto c3 = [&](T x, T y)
+            {
+                sink(cubic_to, o + pt1, o + pt2, point_type{o.x + x, o.y + y});
+                r += rr, s += ss;
+            };
+            for (int i = 0; i != n; ++i)
+            {
+                c1(r, s), c2(s, r), c3(0, r);
+                c1(-s, r), c2(-r, s), c3(-r, 0);
+                c1(-r, -s), c2(-s, -r), c3(0, -r);
+                c1(s, -r), c2(r, -s), c3(r, 0);
+            }
+#   endif
             sink(end_line);
         }
     };

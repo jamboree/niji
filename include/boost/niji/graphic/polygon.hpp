@@ -31,7 +31,7 @@ namespace boost { namespace niji
         
         point_type origin;
         T r;
-        T theta; // To turn side up, use radian = PI / n
+        U theta; // To turn side up, use radian = PI / n
         std::size_t n;
 
         polygon(std::size_t n, point_type const& pt, U const& r, U const& theta = {})

@@ -248,6 +248,11 @@ namespace boost { namespace niji { namespace detail
         {
             return {begin(), end()};
         }
+        
+        bool empty() const
+        {
+            return begin() == _end;
+        }
 
         bool is_closed() const
         {

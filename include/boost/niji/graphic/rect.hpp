@@ -30,7 +30,7 @@ namespace boost { namespace niji { namespace rect_policy
         {
             using namespace command;
             using fusion::at_c;
-
+#   if defined(BOOST_NIJI_NO_CUBIC_APPROX)
             auto mul_tan_pi_over_8 =
                 [](T val) { return val * constants::tan_pi_over_8<T>(); };
             auto mul_root2_over_2 =
@@ -74,6 +74,43 @@ namespace boost { namespace niji { namespace rect_policy
                 sink(quad_to, point<T>{at_c<1>(x) + at_c<1 % n>(sx), y2}, point<T>{at_c<1>(x) + at_c<1 % n>(mx), at_c<1>(y) - at_c<1 % n>(my)});
                 sink(quad_to, point<T>{x1, at_c<1>(y) - at_c<1 % n>(sy)}, point<T>{x1, at_c<1>(y)});
             }
+#   else
+            auto mul_cubic_arc_factor =
+                [](T val) { return val * constants::cubic_arc_factor<T>(); };
+            
+            typename fusion::result_of::as_vector<Rx>::type
+                sx(fusion::transform(rx, mul_cubic_arc_factor)),
+                sy(fusion::transform(ry, mul_cubic_arc_factor));
+
+            if (!at_c<2 % n>(rx) || !at_c<2 % n>(ry))
+                sink(move_to, point<T>{x1, y1});
+            else
+            {
+                sink(move_to, point<T>{x1, at_c<2>(y)});
+                sink(cubic_to, point<T>{x1, at_c<2>(y) + at_c<2 % n>(sy)}, point<T>{at_c<2>(x) + at_c<2 % n>(sx), y1}, point<T>{at_c<2>(x), y1});
+            }
+            if (!at_c<3 % n>(rx) || !at_c<3 % n>(ry))
+                sink(line_to, point<T>{x2, y1});
+            else
+            {
+                sink(line_to, point<T>{at_c<3>(x), y1});
+                sink(cubic_to, point<T>{at_c<3>(x) - at_c<3 % n>(sx), y1}, point<T>{x2, at_c<3>(y) + at_c<3 % n>(sy)}, point<T>{x2, at_c<3>(y)});
+            }
+            if (!at_c<0>(rx) || !at_c<0>(ry))
+                sink(line_to, point<T>{x2, y2});
+            else
+            {
+                sink(line_to, point<T>{x2, at_c<0>(y)});
+                sink(cubic_to, point<T>{x2, at_c<0>(y) - at_c<0>(sy)}, point<T>{at_c<0>(x) - at_c<0>(sx), y2}, point<T>{at_c<0>(x), y2});
+            }
+            if (!at_c<1 % n>(rx) || !at_c<1 % n>(ry))
+                sink(line_to, point<T>{x1, y2});
+            else
+            {
+                sink(line_to, point<T>{at_c<1>(x), y2});
+                sink(cubic_to, point<T>{at_c<1>(x) + at_c<1 % n>(sx), y2}, point<T>{x1, at_c<1>(y) - at_c<1 % n>(sy)}, point<T>{x1, at_c<1>(y)});
+            }
+#   endif
             sink(end_poly);
         }
     };
