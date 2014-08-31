@@ -71,15 +71,7 @@ namespace boost { namespace niji { namespace cap_styles
           , vector<T> const& normal, bool is_line
         ) const
         {
-#if 1
-            vector<T> v(vectors::normal_ccw(normal))
-                    , s(normal * constants::cubic_arc_factor<T>())
-                    , sn(vectors::normal_ccw(s));
-            point<T> pt1(pt + normal), pt2(pt + v), pt3(pt - normal);
-            path.join(pt1);
-            path.unsafe_cubic_to(pt1 + sn, pt2 + s, pt2);
-            path.unsafe_cubic_to(pt2 - s, pt3 + sn, pt3);
-#else
+#   if defined(BOOST_NIJI_NO_CUBIC_APPROX)
             T const s = constants::tan_pi_over_8<T>(),
                     m = constants::root2_over_2<T>();
 
@@ -89,7 +81,15 @@ namespace boost { namespace niji { namespace cap_styles
             path.unsafe_quad_to(f(s, 1), f(0, 1));
             path.unsafe_quad_to(f(-s, 1), f(-m, m));
             path.unsafe_quad_to(f(-1, s), f(-1, 0));
-#endif
+#   else
+            vector<T> v(vectors::normal_ccw(normal))
+                    , s(normal * constants::cubic_arc_factor<T>())
+                    , sn(vectors::normal_ccw(s));
+            point<T> pt1(pt + normal), pt2(pt + v), pt3(pt - normal);
+            path.join(pt1);
+            path.unsafe_cubic_to(pt1 + sn, pt2 + s, pt2);
+            path.unsafe_cubic_to(pt2 - s, pt3 + sn, pt3);
+#   endif
         }
     };
 }}}

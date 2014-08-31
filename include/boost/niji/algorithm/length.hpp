@@ -16,7 +16,7 @@
 namespace boost { namespace niji { namespace detail
 {
     template<class T>
-    struct length_accum
+    struct length_sink
     {
         T sum = 0;
 
@@ -63,7 +63,7 @@ namespace boost { namespace niji
     auto length(Path const& path)
     {
         using coord_t = path_coordinate_t<Path>;
-        detail::length_accum<coord_t> accum;
+        detail::length_sink<coord_t> accum;
         niji::iterate(path, accum);
         return accum.sum;
     }

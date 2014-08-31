@@ -48,22 +48,22 @@ namespace boost { namespace niji
 
             sink(move_to, o);
 #   if defined(BOOST_NIJI_NO_CUBIC_APPROX)
-            r /= 8;
+            r /= 16;
             
-            T ss = r * constants::tan_pi_over_8<T>(),
-              mm = r * constants::root2_over_2<T>(),
-              rr = r, s = ss, m = mm;
+            T ds = r * constants::tan_pi_over_8<T>(),
+              dm = r * constants::root2_over_2<T>(),
+              dr = r, s = ds, m = dm;
 
             point_type pt;
             auto q1 = [&](T x, T y)
             {
                 pt.reset(x, y);
-                r += rr, s += ss, m += mm;
+                r += dr, s += ds, m += dm;
             };
             auto q2 = [&](T x, T y)
             {
                 sink(quad_to, o + pt, point_type{o.x + x, o.y + y});
-                r += rr, s += ss, m += mm;
+                r += dr, s += ds, m += dm;
             };
             for (int i = 0; i != n; ++i)
             {
@@ -77,26 +77,26 @@ namespace boost { namespace niji
                 q1(r, -s), q2(r, 0);
             }
 #   else
-            r /= 6; // near 1/6, good enough
+            r /= 12; // the angle is near pi/6
             
-            T ss = r * constants::cubic_arc_factor<T>(),
-              rr = r, s = ss;
+            T ds = r * constants::cubic_arc_factor<T>(),
+              dr = r, s = ds;
 
             point_type pt1, pt2;
             auto c1 = [&](T x, T y)
             {
                 pt1.reset(x, y);
-                r += rr, s += ss;
+                r += dr, s += ds;
             };
             auto c2 = [&](T x, T y)
             {
                 pt2.reset(x, y);
-                r += rr, s += ss;
+                r += dr, s += ds;
             };
             auto c3 = [&](T x, T y)
             {
                 sink(cubic_to, o + pt1, o + pt2, point_type{o.x + x, o.y + y});
-                r += rr, s += ss;
+                r += dr, s += ds;
             };
             for (int i = 0; i != n; ++i)
             {

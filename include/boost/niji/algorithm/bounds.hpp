@@ -20,11 +20,11 @@
 namespace boost { namespace niji { namespace detail
 {
     template<class T>
-    struct bounds_calc
+    struct bounds_sink
     {
         point<T> min, max;
 
-        bounds_calc()
+        bounds_sink()
             : min(numeric::bounds<T>::highest(), numeric::bounds<T>::highest())
             , max(numeric::bounds<T>::lowest(), numeric::bounds<T>::lowest())
             , _moving(true)
@@ -194,7 +194,7 @@ namespace boost { namespace niji
     {
         using coord_t = path_coordinate_t<Path>;
         using point_t = point<coord_t>;
-        detail::bounds_calc<coord_t> bounds;
+        detail::bounds_sink<coord_t> bounds;
         niji::iterate(path, bounds);
         return box<point_t>(bounds.min, bounds.max);
     }
