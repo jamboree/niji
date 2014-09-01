@@ -12,7 +12,6 @@
 #include <boost/geometry/algorithms/make.hpp>
 #include <boost/niji/view/reverse.hpp>
 #include <boost/niji/view/transform.hpp>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 
 namespace boost { namespace niji { namespace detail

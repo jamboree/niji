@@ -8,7 +8,7 @@
 #define BOOST_NIJI_SUPPORT_VIEW_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/niji/support/traits.hpp>
+#include <boost/niji/support/iterate.hpp>
 #include <boost/niji/support/utility/holder.hpp>
 #include <boost/niji/support/utility/pack.hpp>
 

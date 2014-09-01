@@ -7,7 +7,6 @@
 #ifndef BOOST_NIJI_VIEW_IDENTITY_HPP_INCLUDED
 #define BOOST_NIJI_VIEW_IDENTITY_HPP_INCLUDED
 
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 
 namespace boost { namespace niji

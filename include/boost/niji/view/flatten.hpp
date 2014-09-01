@@ -7,7 +7,6 @@
 #ifndef BOOST_NIJI_VIEW_FLATTEN_HPP_INCLUDED
 #define BOOST_NIJI_VIEW_FLATTEN_HPP_INCLUDED
 
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/command.hpp>
 #include <boost/niji/support/bezier/flatten.hpp>

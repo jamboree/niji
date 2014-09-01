@@ -8,7 +8,6 @@
 #define BOOST_NIJI_VIEW_TRANSFORM_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/utility/holder.hpp>
 

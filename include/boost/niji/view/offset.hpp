@@ -8,7 +8,6 @@
 #define BOOST_NIJI_VIEW_OFFSET_HPP_INCLUDED
 
 #include <boost/assert.hpp>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/utility/as.hpp>
 #include <boost/niji/view/stroke/detail.hpp>

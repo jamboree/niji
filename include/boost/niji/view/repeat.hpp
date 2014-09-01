@@ -10,7 +10,6 @@
 #include <boost/niji/view/identity.hpp>
 #include <boost/niji/view/reverse.hpp>
 #include <boost/niji/view/translate.hpp>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/utility/as.hpp>
 

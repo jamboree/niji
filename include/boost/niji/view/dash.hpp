@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <boost/assert.hpp>
 #include <boost/range/iterator.hpp>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/utility/as.hpp>
 #include <boost/niji/view/detail/dash.hpp>

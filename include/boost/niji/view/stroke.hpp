@@ -8,7 +8,6 @@
 #define BOOST_NIJI_VIEW_STROKE_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/view.hpp>
 #include <boost/niji/support/utility/as.hpp>
 #include <boost/niji/view/stroke/detail.hpp>

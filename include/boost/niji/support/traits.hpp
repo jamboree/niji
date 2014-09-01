@@ -225,18 +225,6 @@ namespace boost { namespace niji
         
         cache_t _cache;
     };
-    
-    template<class Path, class Sink>
-    void iterate(Path const& path, Sink&& sink)
-    {
-        path_iterate<Path, Sink>::apply(path, sink);
-    }
-    
-    template<class Path, class Sink>
-    void reverse_iterate(Path const& path, Sink&& sink)
-    {
-        path_reverse_iterate<Path, Sink>::apply(path, sink);
-    }
 }}
 
 #endif
