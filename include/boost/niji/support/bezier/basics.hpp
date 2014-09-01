@@ -64,21 +64,6 @@ namespace boost { namespace niji { namespace detail
         return r;
     }
 
-    // Find t value for quadratic [a, b, c] = d.
-    // Return 0 if there is no solution within [0, 1)
-    template<class T>
-    T quad_solve(T a, T b, T c, T d)
-    {
-        // At^2 + Bt + C = d
-        T A = a - 2 * b + c;
-        T B = 2 * (b - a);
-        T C = a - d;
-        
-        T roots[2] = {};
-        find_unit_quad_roots(A, B, C, roots);
-        return roots[0];
-    }
-    
     // Quad'(t) = At + B, where
     // A = 2(a - 2b + c)
     // B = 2(b - a)
@@ -118,14 +103,12 @@ namespace boost { namespace niji { namespace detail
         using std::cos;
         using std::pow;
         using std::abs;
-        
-        if (is_nearly_zero(c0)) // we're just a quadratic
+
+        if (!c0)
             return find_unit_quad_roots(c1, c2, c3, tValues);
-    
+
         T a, b, c, Q, R;
         {
-            BOOST_ASSERT(c0 != 0);
-
             a = c1 / c0;
             b = c2 / c0;
             c = c3 / c0;
@@ -172,16 +155,6 @@ namespace boost { namespace niji { namespace detail
         return roots;
     }
 
-    // Find t value for cubic [a, b, c, d] = e.
-    template<class T>
-    T* cubic_solve(T a, T b, T c, T d, T e, T tValues[3])
-    {
-        T C = 3 * (b - a);
-        T B = 3 * (c - b) - C;
-        T A = d - (a + C + B);
-        return solve_cubic_poly(A, B, C, a - e, tValues);
-    }
-
     // Looking for F' dot F'' == 0
     // 
     // A = b - a
@@ -204,7 +177,11 @@ namespace boost { namespace niji { namespace detail
             return pt.x + pt.y;
         };
 
-        auto it = solve_cubic_poly(sum(c * c), sum(b * c * 3), sum(b * b * 2 + c * a), sum(a * b), tValues);
+        T c0 = sum(c * c), c1 = sum(b * c * 3), c2 = sum(b * b * 2 + c * a), c3 = sum(a * b);
+        if (is_nearly_zero(c0)) // we're just a quadratic
+            return find_unit_quad_roots(c1, c2, c3, tValues);
+            
+        auto it = solve_cubic_poly(c0, c1, c2, c3, tValues);
     
         // now remove extrema where the curvature is zero (mins)
         return std::remove_if(tValues, it, [](T t) {return !(0 < t && t < 1); });
@@ -456,6 +433,26 @@ namespace boost { namespace niji { namespace bezier
     {
         return detail::length_impl<T>(pt1, pt2, pt3, pt4);
     }
+
+    // Find t value for quadratic [a, b, c] = d.
+    // Return 0 if there is no solution within [0, 1)
+    template<class T>
+    T* quad_solve(T a, T b, T c, T d, T tValues[2])
+    {
+        // At^2 + Bt + C = d
+        T A = a - 2 * b + c;
+        T B = 2 * (b - a);
+        T C = a - d;
+        return detail::find_unit_quad_roots(A, B, C, tValues);
+    }
+    
+    template<class T>
+    inline T quad_eval(T a, T b, T c, T t)
+    {
+        BOOST_ASSERT(0 <= t && t <= 1);
+
+        return interpolate(interpolate(a, b, t), interpolate(b, c, t), t);
+    }
     
     template<class T>
     void chop_quad_at_half(point<T> const in[3], point<T> out[5])
@@ -477,17 +474,6 @@ namespace boost { namespace niji { namespace bezier
         out[3] = points::interpolate(in[1], in[2], t);
         out[2] = points::interpolate(out[1], out[3], t);
         out[4] = in[2];
-    }
-    
-    template<class T>
-    point<T> quad_at(point<T> const in[3], T t)
-    {
-        return points::interpolate
-        (
-            points::interpolate(in[0], in[1], t)
-          , points::interpolate(in[1], in[2], t)
-          , t
-        );
     }
 
     // F(t)    = a (1 - t) ^ 2 + 2 b t (1 - t) + c t ^ 2
@@ -527,7 +513,7 @@ namespace boost { namespace niji { namespace bezier
         using std::abs;
         
         T const* base;
-        T value;
+        T value, roots[2];
     
         if (abs(pt.x) < abs(pt.y))
         {
@@ -542,11 +528,10 @@ namespace boost { namespace niji { namespace bezier
     
         // note: this returns 0 if it thinks value is out of range, meaning the
         // root might return something outside of [0, 1)
-        T t = detail::quad_solve(base[0], base[2], base[4], value);
-    
-        if (t > 0)
+        auto end = quad_solve(base[0], base[2], base[4], value, roots);
+        if (roots != end && *roots > 0)
         {
-            quad[1] = points::interpolate(quad[0], quad[1], t);
+            quad[1] = points::interpolate(quad[0], quad[1], *roots);
             quad[2] = pt;
             return true;
         }
@@ -646,9 +631,30 @@ namespace boost { namespace niji { namespace bezier
             *it = affine(*it);
         return it;
     }
-    
 
-    
+    // Find t value for cubic [a, b, c, d] = e.
+    template<class T>
+    T* cubic_solve(T a, T b, T c, T d, T e, T tValues[3])
+    {
+        T C = 3 * (b - a);
+        T B = 3 * (c - b) - C;
+        T A = d - (a + C + B);
+        return detail::solve_cubic_poly(A, B, C, a - e, tValues);
+    }
+
+    template<class T>
+    T cubic_eval(T a, T b, T c, T d, T t)
+    {
+        BOOST_ASSERT(0 <= t && t <= 1);
+
+        T ab = interpolate(a, b, t);
+        T bc = interpolate(b, c, t);
+        T cd = interpolate(c, d, t);
+        T abc = interpolate(ab, bc, t);
+        T bcd = interpolate(bc, cd, t);
+        return interpolate(abc, bcd, t);
+    }
+
     template<class T>
     void chop_cubic_at_half(point<T> const in[4], point<T> out[7])
     {
@@ -678,7 +684,7 @@ namespace boost { namespace niji { namespace bezier
         out[3] = points::interpolate(out[2], out[4], t);
         out[6] = in[3];
     }
-    
+
     template<class T>
     void chop_cubic_at(point<T> const in[4], point<T> out[], T* tit, T* tend)
     {
