@@ -8,7 +8,7 @@
 #define BOOST_NIJI_LAZY_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/niji/support/traits.hpp>
+#include <boost/niji/iterate.hpp>
 #include <boost/optional/optional.hpp>
 
 namespace boost { namespace niji

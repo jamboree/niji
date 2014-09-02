@@ -9,8 +9,8 @@
 
 #include <type_traits>
 #include <functional>
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
-#include <boost/niji/support/traits.hpp>
 
 namespace boost { namespace niji { namespace detail
 {

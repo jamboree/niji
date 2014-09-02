@@ -8,7 +8,7 @@
 #define BOOST_NIJI_COMPOSE_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/niji/support/traits.hpp>
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/common_point.hpp>
 #include <boost/niji/support/utility/pack.hpp>
 

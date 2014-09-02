@@ -7,8 +7,8 @@
 #ifndef BOOST_NIJI_GRAPHIC_FRAME_HPP_INCLUDED
 #define BOOST_NIJI_GRAPHIC_FRAME_HPP_INCLUDED
 
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/support/box.hpp>
 

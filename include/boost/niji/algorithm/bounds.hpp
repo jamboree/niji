@@ -10,8 +10,8 @@
 #include <boost/assert.hpp>
 #include <boost/integer.hpp>
 #include <boost/numeric/conversion/bounds.hpp>
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
-#include <boost/niji/support/iterate.hpp>
 #include <boost/niji/support/vector.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/support/box.hpp>

@@ -16,8 +16,8 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/min_element.hpp>
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
-#include <boost/niji/support/traits.hpp>
 #include <boost/niji/support/vector.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/detail/coord_fn.hpp>

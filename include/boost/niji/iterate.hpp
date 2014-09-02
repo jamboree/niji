@@ -13,36 +13,29 @@
 
 namespace boost { namespace niji { namespace detail
 {
-    struct stoppable_guard
+    template<class Sink>
+    inline auto wrap_stoppable_sink(Sink& sink)
     {
-        unsigned& depth;
-        
-        explicit stoppable_guard(stoppable_sink& sink)
-          : depth(++sink.sink_depth)
-        {}
-        
-        ~stoppable_guard()
+        return [&sink](auto&&... ts)
         {
-            --depth;
-        }
-    };
+            sink(static_cast<decltype(ts)>(ts)...);
+        };
+    }
     
     template<class Path, class Sink>
     std::enable_if_t<std::is_base_of<stoppable_sink, Sink>::value>
     iterate_impl(Path const& path, Sink& sink)
     {
-        stoppable_guard guard(sink);
-        if (guard.depth != 1)
-            path_iterate<Path, Sink>::apply(path, sink);
-        else try
+        auto wrapped = wrap_stoppable_sink(sink);
+        try
         {
-            path_iterate<Path, Sink>::apply(path, sink);
+            path_iterate<Path, decltype(wrapped)>::apply(path, wrapped);
         }
         catch (iteration_stopped&) {}
     }
     
     template<class Path, class Sink>
-    std::enable_if_t<!std::is_base_of<stoppable_sink, Sink>::value>
+    inline std::enable_if_t<!std::is_base_of<stoppable_sink, Sink>::value>
     iterate_impl(Path const& path, Sink& sink)
     {
         path_iterate<Path, Sink>::apply(path, sink);
@@ -52,18 +45,16 @@ namespace boost { namespace niji { namespace detail
     std::enable_if_t<std::is_base_of<stoppable_sink, Sink>::value>
     reverse_iterate_impl(Path const& path, Sink& sink)
     {
-        stoppable_guard guard(sink);
-        if (guard.depth != 1)
-            path_reverse_iterate<Path, Sink>::apply(path, sink);
-        else try
+        auto wrapped = wrap_stoppable_sink(sink);
+        try
         {
-            path_reverse_iterate<Path, Sink>::apply(path, sink);
+            path_reverse_iterate<Path, decltype(wrapped)>::apply(path, wrapped);
         }
         catch (iteration_stopped&) {}
     }
     
     template<class Path, class Sink>
-    std::enable_if_t<!std::is_base_of<stoppable_sink, Sink>::value>
+    inline std::enable_if_t<!std::is_base_of<stoppable_sink, Sink>::value>
     reverse_iterate_impl(Path const& path, Sink& sink)
     {
         path_reverse_iterate<Path, Sink>::apply(path, sink);

@@ -7,8 +7,8 @@
 #ifndef BOOST_NIJI_ALGORITHM_LENGTH_HPP_INCLUDED
 #define BOOST_NIJI_ALGORITHM_LENGTH_HPP_INCLUDED
 
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
-#include <boost/niji/support/iterate.hpp>
 #include <boost/niji/support/vector.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/support/bezier/basics.hpp>

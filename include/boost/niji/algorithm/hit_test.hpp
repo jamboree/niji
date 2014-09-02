@@ -7,8 +7,8 @@
 #ifndef BOOST_NIJI_ALGORITHM_HIT_TEST_HPP_INCLUDED
 #define BOOST_NIJI_ALGORITHM_HIT_TEST_HPP_INCLUDED
 
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
-#include <boost/niji/support/iterate.hpp>
 #include <boost/niji/support/vector.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/support/bezier/basics.hpp>
@@ -18,11 +18,11 @@ namespace boost { namespace niji { namespace detail
     template<class T>
     struct hit_test_sink : stoppable_sink
     {
-        point<T> o;
-        bool result, pol;
+        point<T> _o, _prev, _first;
+        bool result, _pol;
 
-        explicit hit_test_sink(point<T> const& o)
-          : o(o), result(), pol()
+        explicit hit_test_sink(point<T> const& _o)
+          : _o(_o), result(), _pol()
         {}
 
         void operator()(move_to_t, point<T> const& pt)
@@ -30,35 +30,33 @@ namespace boost { namespace niji { namespace detail
             _first = _prev = pt;
         }
 
-        // non-zero:
-        // pol += ((pt1.y > pt0.y) << 1) - 1;
         void operator()(line_to_t, point<T> pt1)
         {
             auto pt0 = _prev;
             _prev = pt1;
             
-            if (pt1.y == o.y)
+            if (pt1.y == _o.y)
             {
-                if (pt1.x == o.x || (pt0.y == o.y && (pt0.x < o.x) == (o.x < pt1.x)))
-                  return on_boundary();
+                if (pt1.x == _o.x || (pt0.y == _o.y && (pt0.x < _o.x) == (_o.x < pt1.x)))
+                  return on_border();
             }
-            if ((pt0.y < o.y) != (pt1.y < o.y))
+            if ((pt0.y < _o.y) != (pt1.y < _o.y))
             {
-                if (pt0.x < o.x)
+                if (pt0.x < _o.x)
                 {
-                    if (pt1.x <= o.x)
+                    if (pt1.x <= _o.x)
                     {
-                        pol = !pol;
+                        _pol = !_pol;
                         return;
                     }
                 }
-                else if (pt1.x > o.x)
+                else if (pt1.x > _o.x)
                     return;
-                T d = vectors::cross(pt0 - o, pt1 - o);
+                T d = vectors::cross(pt0 - _o, pt1 - _o);
                 if (!d)
-                    return on_boundary();
+                    return on_border();
                 if ((d > 0) != (pt1.y > pt0.y))
-                    pol = !pol;
+                    _pol = !_pol;
             }
         }
 
@@ -67,30 +65,30 @@ namespace boost { namespace niji { namespace detail
             auto pt0 = _prev;
             _prev = pt2;
             
-            if (pt2 == o)
-                return on_boundary();
+            if (pt2 == _o)
+                return on_border();
             
-            bool flag = pt2.y < o.y, flag_y = (pt0.y < o.y) != flag;
-            if (flag_y || (pt1.y < o.y) != flag)
+            bool flag = pt2.y < _o.y, flag_y = (pt0.y < _o.y) != flag;
+            if (flag_y || (pt1.y < _o.y) != flag)
             {
-                flag = pt2.x < o.x;
-                bool flag2 = pt0.x < o.x;
-                if (flag2 != flag || (pt1.x < o.x) != flag)
+                flag = pt2.x < _o.x;
+                bool flag2 = pt0.x < _o.x;
+                if (flag2 != flag || (pt1.x < _o.x) != flag)
                 {
                     T roots[2];
-                    auto end = bezier::quad_solve(pt0.y, pt1.y, pt2.y, o.y, roots);
+                    auto end = bezier::quad_solve(pt0.y, pt1.y, pt2.y, _o.y, roots);
                     for (auto it = roots; it != end; ++it)
                     {
                         T x = bezier::quad_eval(pt0.x, pt1.x, pt2.x, *it);
-                        if (x == o.x)
-                          return on_boundary();
-                        if (x < o.x)
-                          pol = !pol;
+                        if (x == _o.x)
+                          return on_border();
+                        if (x < _o.x)
+                          _pol = !_pol;
                     }
-                    pol ^= ((pt0.y == o.y) & flag2) != ((pt2.y == o.y) & flag);
+                    _pol ^= ((pt0.y == _o.y) & flag2) != ((pt2.y == _o.y) & flag);
                 }
                 else
-                    pol ^= flag_y & flag;
+                    _pol ^= flag_y & flag;
             }
         }
 
@@ -99,54 +97,50 @@ namespace boost { namespace niji { namespace detail
             auto pt0 = _prev;
             _prev = pt3;
             
-            if (pt3 == o)
-                return on_boundary();
+            if (pt3 == _o)
+                return on_border();
             
-            bool flag = pt3.y < o.y, flag_y = (pt0.y < o.y) != flag;
-            if (flag_y || (pt1.y < o.y) != flag || (pt2.y < o.y) != flag)
+            bool flag = pt3.y < _o.y, flag_y = (pt0.y < _o.y) != flag;
+            if (flag_y || (pt1.y < _o.y) != flag || (pt2.y < _o.y) != flag)
             {
-                flag = pt3.x < o.x;
-                bool flag2 = pt0.x < o.x;
-                if (flag2 != flag || (pt1.x < o.x) != flag || (pt2.x < o.x) != flag)
+                flag = pt3.x < _o.x;
+                bool flag2 = pt0.x < _o.x;
+                if (flag2 != flag || (pt1.x < _o.x) != flag || (pt2.x < _o.x) != flag)
                 {
                     T roots[3];
-                    auto end = bezier::cubic_solve(pt0.y, pt1.y, pt2.y, pt3.y, o.y, roots);
+                    auto end = bezier::cubic_solve(pt0.y, pt1.y, pt2.y, pt3.y, _o.y, roots);
                     for (auto it = roots; it != end; ++it)
                     {
                         T x = bezier::cubic_eval(pt0.x, pt1.x, pt2.x, pt3.x, *it);
-                        if (x == o.x)
-                          return on_boundary();
-                        if (x < o.x)
-                          pol = !pol;
+                        if (x == _o.x)
+                          return on_border();
+                        if (x < _o.x)
+                          _pol = !_pol;
                     }
-                    pol ^= ((pt0.y == o.y) & flag2) != ((pt3.y == o.y) & flag);
+                    _pol ^= ((pt0.y == _o.y) & flag2) != ((pt3.y == _o.y) & flag);
                 }
                 else
-                    pol ^= flag_y & flag;
+                    _pol ^= flag_y & flag;
             }
         }
         
         void operator()(end_line_t)
         {
-            pol = false;
+            _pol = false;
         }
 
         void operator()(end_poly_t)
         {
             (*this)(line_to_t(), _first);
-            result ^= pol;
-            pol = false;
+            result ^= _pol;
+            _pol = false;
         }
 
-        void on_boundary()
+        void on_border()
         {
             result = true;
             stop();
         }
-        
-    private:
-        
-        point<T> _prev, _first;
     };
 }}}
 

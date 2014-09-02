@@ -658,7 +658,7 @@ namespace boost { namespace niji { namespace bezier
     template<class T>
     void chop_cubic_at_half(point<T> const in[4], point<T> out[7])
     {
-        T bc = points::middle(in[1], in[2]);
+        point<T> bc = points::middle(in[1], in[2]);
     
         out[0] = in[0];
         out[1] = points::middle(in[0], in[1]);
@@ -674,7 +674,7 @@ namespace boost { namespace niji { namespace bezier
     {
         BOOST_ASSERT(0 <= t && t <= 1);
         
-        T bc = points::interpolate(in[1], in[2], t);
+        point<T> bc = points::interpolate(in[1], in[2], t);
     
         out[0] = in[0];
         out[1] = points::interpolate(in[0], in[1], t);
