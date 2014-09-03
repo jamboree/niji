@@ -168,9 +168,9 @@ namespace boost { namespace niji { namespace detail
     template<class T>
     T* find_cubic_max_curvature(point<T> const src[4], T tValues[3])
     {
-        T a = src[1] - src[0];
-        T b = src[2] - src[1] * 2 - src[0];
-        T c = src[3] + (src[1] - src[2]) * 3 - src[0];
+        auto a = src[1] - src[0];
+        auto b = src[2] - src[1] * 2 - src[0];
+        auto c = src[3] + (src[1] - src[2]) * 3 - src[0];
         
         auto sum = [](point<T> const& pt)
         {
@@ -421,7 +421,35 @@ namespace boost { namespace niji { namespace bezier
         }};
         return pts;
     }
+    
+    template<class T>
+    array<point<T>, 13> const& cubic_circle_points()
+    {
+        using constants::cubic_arc_factor;
 
+        static array<point<T>, 13> pts =
+        {{
+            point<T>(1, 0)
+          , point<T>(1, cubic_arc_factor<T>())
+          , point<T>(cubic_arc_factor<T>(), 1)
+          
+          , point<T>(0, 1)
+          , point<T>(-cubic_arc_factor<T>(), 1)
+          , point<T>(-1, cubic_arc_factor<T>())
+          
+          , point<T>(-1, 0)
+          , point<T>(-1, -cubic_arc_factor<T>())
+          , point<T>(-cubic_arc_factor<T>(), -1)
+          
+          , point<T>(0, -1)
+          , point<T>(cubic_arc_factor<T>(), -1)
+          , point<T>(1, -cubic_arc_factor<T>())
+          
+          , point<T>(1, 0)
+        }};
+        return pts;
+    }
+    
     template<class T>
     inline T quad_length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
     {
@@ -626,7 +654,7 @@ namespace boost { namespace niji { namespace bezier
             affine.pre_flip_y();
         if (mat)
             affine.append(*mat);
-        point<T> *it = out, *end = out + point_count;
+        auto it = out, end = out + point_count;
         for ( ; it != end; ++it)
             *it = affine(*it);
         return it;
@@ -728,6 +756,133 @@ namespace boost { namespace niji { namespace bezier
         else
             chop_cubic_at(in, out, tValues, it);
         return it - tValues + 1;
+    }
+
+    // given a cubic-curve and a point (x,y), chop the cubic at that point and place
+    // the new off-curve point and endpoint into 'dest'.
+    // Should only return false if the computed pos is the start of the curve
+    // (i.e. root == 0)
+    template<class T>
+    bool truncate_cubic_at(point<T> cubic[4], point<T> const& pt)
+    {
+        using std::abs;
+        
+        T const* base;
+        T value, roots[3];
+    
+        if (abs(pt.x) < abs(pt.y))
+        {
+            base = &cubic[0].x;
+            value = pt.x;
+        }
+        else
+        {
+            base = &cubic[0].y;
+            value = pt.y;
+        }
+    
+        // note: this returns 0 if it thinks value is out of range, meaning the
+        // root might return something outside of [0, 1)
+        auto end = cubic_solve(base[0], base[2], base[4], base[6], value, roots);
+        if (roots != end && *roots > 0)
+        {
+            auto t = *roots;
+            auto c1 = cubic[1];
+            cubic[1] = points::interpolate(cubic[0], c1, t);
+            cubic[2] = points::interpolate(cubic[1], points::interpolate(c1, cubic[2], t), t);
+            cubic[3] = pt;
+            return true;
+        }
+        else
+        {
+            // t == 0 means either the value triggered a root outside of [0, 1)
+            // For our purposes, we can ignore the <= 0 roots, but we want to
+            // catch the >= 1 roots (which given our caller, will basically mean
+            // a root of 1, give-or-take numerical instability). If we are in the
+            // >= 1 case, return the existing offCurve point.
+            //    
+            // The test below checks to see if we are close to the "end" of the
+            // curve (near base[4]). Rather than specifying a tolerance, I just
+            // check to see if value is on to the right/left of the middle point
+            // (depending on the direction/sign of the end points).
+            if ((base[0] < base[6]) == (value > base[4]))   // should root have been 1
+            {
+                cubic[3] = pt;
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    template<class T>
+    point<T>* build_cubic_arc(vector<T> const& u_start, vector<T> const& u_stop, bool is_ccw, transforms::affine<T> const* mat, point<T>* out)
+    {
+        using std::abs;
+
+        T x = vectors::dot(u_start, u_stop);
+        T y = vectors::cross(u_start, u_stop);
+        
+        T abs_y = abs(y);
+        
+        int point_count;
+    
+        // check for (effectively) coincident vectors
+        // this can happen if our angle is nearly 0 or nearly 180 (y == 0)
+        // ... we use the dot-prod to distinguish between 0 and 180 (x > 0)
+        if (is_nearly_zero(abs_y) && x > 0 && ((y >= 0 && is_ccw) || (y <= 0 && !is_ccw)))
+        {
+            // just return the start-point
+            out[0] = point<T>(1, 0);
+            point_count = 1;
+        }
+        else
+        {
+            if (!is_ccw)
+                y = -y;
+    
+            // what quadrant (cubic curve) is [xy] in?
+            int quad = 0;
+
+            if (0 == y)
+            {
+                quad = 2;        // 180
+                BOOST_ASSERT(is_nearly_zero(abs(x + 1)));
+            }
+            else if (0 == x)
+            {
+                BOOST_ASSERT(is_nearly_zero(abs_y - 1));
+                if (y > 0)
+                    quad = 1;    // 90
+                else
+                    quad = 3;    // 270
+            }
+            else
+            {
+                if (y < 0)
+                    quad += 2;
+                if ((x < 0) != (y < 0))
+                {
+                    quad += 1;
+                }
+            }
+    
+            int whole_count = quad * 3;
+            point<T> const* q = cubic_circle_points<T>().begin();
+            std::copy(q, q + (whole_count + 4), out);
+            if (truncate_cubic_at(out + whole_count, point<T>(x, y)))
+                whole_count += 3;
+
+            point_count = whole_count + 1;
+        }
+        transforms::affine<T> affine(transforms::rotate<T>(u_start.y, u_start.x));
+        if (!is_ccw)
+            affine.pre_flip_y();
+        if (mat)
+            affine.append(*mat);
+        auto it = out, end = out + point_count;
+        for ( ; it != end; ++it)
+            *it = affine(*it);
+        return it;
     }
 }}}
 

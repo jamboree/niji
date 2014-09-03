@@ -113,17 +113,27 @@ namespace boost { namespace niji { namespace join_styles
                 former_normal = -former_normal;
                 later_normal = -later_normal;
             }
-            point<T> pts[17];
             transforms::affine<T> affine;
             affine.scale(r).translate(pt.x, pt.y);
+#   if defined(BOOST_NIJI_NO_CUBIC_APPROX)
+            point<T> pts[17];
             // ignore the 1st point which should be already in path
             auto it = pts + 1, end = bezier::build_quad_arc(former_normal / r, later_normal / r, is_ccw, &affine, pts);
-#if defined(JAMBOREE)
+#   else
+            point<T> pts[13];
+            // ignore the 1st point which should be already in path
+            auto it = pts + 1, end = bezier::build_cubic_arc(former_normal / r, later_normal / r, is_ccw, &affine, pts);
+#   endif
+#   if defined(JAMBOREE)
             o->join(*pts);
-#endif
+#   endif
+#   if defined(BOOST_NIJI_NO_CUBIC_APPROX)
             for ( ; it != end; it += 2)
                 o->unsafe_quad_to(*it, it[1]);
-
+#   else
+            for ( ; it != end; it += 3)
+                o->unsafe_cubic_to(*it, it[1], it[2]);
+#   endif
             detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
         }
     };

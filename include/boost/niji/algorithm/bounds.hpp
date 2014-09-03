@@ -116,13 +116,9 @@ namespace boost { namespace niji { namespace detail
                 return;
             }
             T t;
-            T* end = find_quad_extrema(aa, bb, cc, &t);
+            auto end = find_quad_extrema(aa, bb, cc, &t);
             if (&t != end)
-            {
-                T ab = interpolate(aa, bb, t);
-                T bc = interpolate(bb, cc, t);
-                adjust_coord<n>(interpolate(ab, bc, t));
-            }
+                adjust_coord<n>(bezier::quad_eval(aa, bb, cc, t));
         }
         
         template<int n>
@@ -139,15 +135,9 @@ namespace boost { namespace niji { namespace detail
                 return;
 
             T extrama[2];
-            T* end = find_cubic_extrema(aa, bb, cc, dd, extrama);
-            for (T* it = extrama; it != end; ++it)
-            {
-                T t = *it;
-                T bc = interpolate(bb, cc, t);
-                T abc = interpolate(interpolate(aa, bb, t), bc, t);
-                T bcd = interpolate(bc, interpolate(cc, dd, t), t);
-                adjust_coord<n>(interpolate(abc, bcd, t));
-            }
+            auto end = find_cubic_extrema(aa, bb, cc, dd, extrama);
+            for (auto it = extrama; it != end; ++it)
+                adjust_coord<n>(bezier::cubic_eval(aa, bb, cc, dd, *it));
         }
         
         void adjust(point<T> const& pt)

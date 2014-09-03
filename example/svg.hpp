@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <boost/optional/optional.hpp>
 #include <boost/geometry/core/access.hpp>
+#include <boost/niji/iterate.hpp>
 #include <boost/niji/support/command.hpp>
 #include <boost/niji/support/point.hpp>
 #include <boost/niji/support/transform/affine.hpp>
