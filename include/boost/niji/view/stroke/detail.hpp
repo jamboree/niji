@@ -68,100 +68,6 @@ namespace boost { namespace niji { namespace detail
             post_join(pt, normal);
         }
 
-        void pre_join(point_t const& pt, vector_t& normal, bool curr_is_line)
-        {
-            using std::sqrt;
-            
-            normal = vectors::normal_cw(pt - _prev_pt);
-            T magnitude = vectors::norm_square(normal);
-            normal = normal * _r / sqrt(magnitude);
-
-            if (_seg_count > 0) // we have a previous segment
-                _join
-                (
-                    _outer, _inner, _prev_pt, _prev_normal, normal
-                  , _r, _prev_is_line, curr_is_line
-                  , std::min(_pre_magnitude, magnitude)
-                );
-            else
-            {
-                _first_normal = normal;
-                //first_outer_pt = _prev_pt + normal;
-                _first_magnitude = magnitude;
-#ifdef JAMBOREE
-                if (!curr_is_line)
-#endif
-                {
-                    _outer.join(_prev_pt + normal);
-                    if (!std::is_same<Capper, non_capper>::value)
-                        _inner.join(_prev_pt - normal);
-                }
-            }
-            _prev_is_line = curr_is_line;
-            _pre_magnitude = magnitude;
-        }
-
-        void post_join(point_t const& pt, vector_t const& normal)
-        {
-            _prev_pt = pt;
-            _prev_normal = normal;
-            ++_seg_count;
-        }
-
-        void line_to_stroke(point_t const& pt, vector_t const& normal)
-        {
-#ifndef JAMBOREE
-            _outer.join(pt + normal);
-            if (!std::is_same<Capper, non_capper>::value)
-                _inner.join(pt - normal);
-#endif
-        }
-
-        void cut(bool curr_is_line)
-        {
-            switch (_seg_count)
-            {
-            case -1:
-                degenerated_dot();
-            case 0:
-                return;
-            }
-            // _cap the end
-            _cap(_outer, _prev_pt, _prev_normal, curr_is_line);
-            _outer.reverse_splice(_inner);
-
-            // _cap the start
-            _cap(_outer, _first_pt, -_first_normal, _prev_is_line);
-            _outer.close();
-
-            _inner.clear();
-        }
-
-        void close(bool curr_is_line)
-        {
-            if (_seg_count < 1)
-            {
-                if (_seg_count == -1)
-                    degenerated_dot();
-                return;
-            }
-
-            line_to(_first_pt);
-            _join
-            (
-                _outer, _inner, _prev_pt, _prev_normal, _first_normal
-              , _r, _prev_is_line, curr_is_line
-              , std::min(_pre_magnitude, _first_magnitude)
-            );
-            _outer.close();
-            if (!std::is_same<Capper, non_capper>::value)
-            {
-                _inner.close();
-                _outer.reverse_splice(_inner);
-                _inner.clear();
-            }
-        }
-
         void quad_to(point_t const& pt1, point_t const& pt2)
         {
             bool degenerateAB = vectors::is_degenerated(pt1 - _prev_pt);
@@ -235,7 +141,101 @@ namespace boost { namespace niji { namespace detail
             }
             post_join(pt3, normalCD);
         }
-        
+
+        void cut(bool curr_is_line)
+        {
+            switch (_seg_count)
+            {
+            case -1:
+                degenerated_dot();
+            case 0:
+                return;
+            }
+            // _cap the end
+            _cap(_outer, _prev_pt, _prev_normal, curr_is_line);
+            _outer.reverse_splice(_inner);
+
+            // _cap the start
+            _cap(_outer, _first_pt, -_first_normal, _prev_is_line);
+            _outer.close();
+
+            _inner.clear();
+        }
+
+        void close(bool curr_is_line)
+        {
+            if (_seg_count < 1)
+            {
+                if (_seg_count == -1)
+                    degenerated_dot();
+                return;
+            }
+
+            line_to(_first_pt);
+            _join
+            (
+                _outer, _inner, _prev_pt, _prev_normal, _first_normal
+              , _r, _prev_is_line, curr_is_line
+              , std::min(_pre_magnitude, _first_magnitude)
+            );
+            _outer.close();
+            if (!std::is_same<Capper, non_capper>::value)
+            {
+                _inner.close();
+                _outer.reverse_splice(_inner);
+                _inner.clear();
+            }
+        }
+
+        void pre_join(point_t const& pt, vector_t& normal, bool curr_is_line)
+        {
+            using std::sqrt;
+            
+            normal = vectors::normal_cw(pt - _prev_pt);
+            T magnitude = vectors::norm_square(normal);
+            normal = normal * _r / sqrt(magnitude);
+
+            if (_seg_count > 0) // we have a previous segment
+                _join
+                (
+                    _outer, _inner, _prev_pt, _prev_normal, normal
+                  , _r, _prev_is_line, curr_is_line
+                  , std::min(_pre_magnitude, magnitude)
+                );
+            else
+            {
+                _first_normal = normal;
+                //first_outer_pt = _prev_pt + normal;
+                _first_magnitude = magnitude;
+#ifdef JAMBOREE
+                if (!curr_is_line)
+#endif
+                {
+                    _outer.join(_prev_pt + normal);
+                    if (!std::is_same<Capper, non_capper>::value)
+                        _inner.join(_prev_pt - normal);
+                }
+            }
+            _prev_is_line = curr_is_line;
+            _pre_magnitude = magnitude;
+        }
+
+        void post_join(point_t const& pt, vector_t const& normal)
+        {
+            _prev_pt = pt;
+            _prev_normal = normal;
+            ++_seg_count;
+        }
+
+        void line_to_stroke(point_t const& pt, vector_t const& normal)
+        {
+#ifndef JAMBOREE
+            _outer.join(pt + normal);
+            if (!std::is_same<Capper, non_capper>::value)
+                _inner.join(pt - normal);
+#endif
+        }
+
         void quad_to_stroke(point_t const pts[3], vector_t const& normalAB, vector_t& normalBC, int subdivide)
         {
             using std::sqrt;

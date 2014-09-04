@@ -9,6 +9,7 @@
 
 #include <type_traits>
 #include <functional>
+#include <initializer_list>
 #include <boost/ref.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/mpl/eval_if.hpp>
@@ -63,16 +64,6 @@ namespace boost { namespace niji { namespace detail
     
     template<class... Ts>
     using pack_impl_t = decltype(pack_impl<Ts...>(std::declval<Ts>()...));
-    
-    template<class F>
-    void pack_for_each_impl(F& f) {}
-    
-    template<class F, class T, class... Ts>
-    void pack_for_each_impl(F& f, T&& t, Ts&&... ts)
-    {
-        f(std::forward<T>(t));
-        pack_for_each_impl(f, std::forward<Ts>(ts)...);
-    }
 }}}
 
 namespace boost { namespace niji
@@ -91,13 +82,7 @@ namespace boost { namespace niji
         pack(pack &&) = default;
     };
     
-    constexpr auto pack_for_each = [](auto&& f)
-    {
-        return [&](auto&&... ts)
-        {
-            detail::pack_for_each_impl(f, static_cast<decltype(ts)>(ts)...);
-        };
-    };
+    using unpack_list = std::initializer_list<bool>;
 }}
 
 #endif

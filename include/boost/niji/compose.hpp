@@ -29,19 +29,19 @@ namespace boost { namespace niji
         template<class Sink>
         void iterate(Sink& sink) const
         {
-            paths(pack_for_each([&sink](auto const& path)
+            paths([&sink](auto const&... path)
             {
-                niji::iterate(path, sink);
-            }));
+                unpack_list{(niji::iterate(path, sink), true)...};
+            });
         }
         
         template<class Sink>
         void reverse_iterate(Sink& sink) const
         {
-            paths(pack_for_each([&sink](auto const& path)
+            paths([&sink](auto const&... path)
             {
-                niji::reverse_iterate(path, sink);
-            }));
+                unpack_list{(niji::reverse_iterate(path, sink), true)...};
+            });
         }
     };
     
