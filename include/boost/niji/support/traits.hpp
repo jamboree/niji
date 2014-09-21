@@ -143,13 +143,12 @@ namespace boost { namespace niji
     template<class Tag, geometry::order_selector order>
     struct geometry_iterate
     {
-        typedef
-            geometry_iterate<Tag, opposite_order<order>::value>
-        opposite;
+        using opposite = geometry_iterate<Tag, opposite_order<order>::value>;
         
         // You're seeing error here becasue geometry_iterate hasn't be defined
         // for either order of Tag.
-        BOOST_MPL_ASSERT_NOT((detail::has_opposite<opposite>));
+        static_assert(!detail::has_opposite<opposite>::value
+          , "no geometry_iterate defined for Tag");
         
         template<class Geo, class Sink>
         static void apply(Geo const& geo, Sink& sink)
