@@ -78,5 +78,5 @@ int main()
     
     canvas.stroke({2, svg::rgb(154, 206, 235)});
     canvas.draw(p | skeleton);
-	return 0;
+    return 0;
 }

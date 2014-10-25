@@ -1,7 +1,7 @@
 niji
 ====
 
-2D graphics library for C++1y, path only, no color, no rendering.
+2D graphics library for C++14, path only, no color, no rendering.
 
 ## Introduction
 
@@ -23,6 +23,8 @@ Niji can be divided into these submodules:
 
 ## Quick Example
 
+The following example shows how to output the path of a dashed ellipse:
+
 ```c++
 using namespace boost::niji;                                                 
                                                                              
@@ -32,7 +34,7 @@ iterate(ellipse<double>({100, 100}, 50) | views::dash<double>({6, 2}), sink);
 - `iterate(path, sink)` is a utility function that sends the path commands to sink.
 - `ellipse<T>` is a predefined path generator.
 - `views::dash<T>(pattern)` returns a path adaptor that generates dash lines.
-- `sink` is something that receives the path commands.
+- `sink` is something that handles the path commands.
 
 ## Documentation
 - [Tutorial](https://github.com/jamboree/niji/wiki/Tutorial)

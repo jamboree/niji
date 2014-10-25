@@ -41,5 +41,5 @@ int main()
     canvas.fill(svg::rgb());
     canvas.draw(arrow<double>(50) | views::translate<double>(250, 250));
 
-	return 0;
+    return 0;
 }

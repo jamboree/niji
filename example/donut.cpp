@@ -38,5 +38,5 @@ int main()
     canvas.fill(svg::rgb());
     canvas.draw(donut<double>({250, 250}, 100, 60));
 
-	return 0;
+    return 0;
 }
