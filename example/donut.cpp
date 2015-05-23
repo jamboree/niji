@@ -1,36 +1,36 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2014 Jamboree
+    Copyright (c) 2015 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
 
 #include <fstream>
-#include <boost/niji/lazy.hpp>
-#include <boost/niji/compose.hpp>
-#include <boost/niji/support/point.hpp>
-#include <boost/niji/graphic/ellipse.hpp>
-#include <boost/niji/view/reverse.hpp>
+#include <niji/lazy.hpp>
+#include <niji/compose.hpp>
+#include <niji/support/point.hpp>
+#include <niji/graphic/ellipse.hpp>
+#include <niji/view/inverse.hpp>
 #include "svg.hpp"
 
 template<class T>
-auto donut(boost::niji::point<T> const& pt, T o, T i)
+auto donut(niji::point<T> const& pt, T o, T i)
 {
-    using namespace boost::niji;
+    using namespace niji;
 
     return lazy([=]
     {
         return compose
         (
             ellipse<T>(pt, o)
-          , ellipse<T>(pt, i) | views::reverse
+          , ellipse<T>(pt, i) | views::inverse
         );
     });
 }
 
 int main()
 {  
-    using namespace boost::niji;
+    using namespace niji;
 
     std::ofstream fout("donut.svg");
     svg::canvas canvas(fout, 500, 500);

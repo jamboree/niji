@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2014 Jamboree
+    Copyright (c) 2015 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,18 +7,19 @@
 #ifndef BOOST_NIJI_EXAMPLE_SVG_HPP_INCLUDED
 #define BOOST_NIJI_EXAMPLE_SVG_HPP_INCLUDED
 
+#include <vector>
 #include <iostream>
 #include <sstream>
 #include <cstdint>
 #include <boost/optional/optional.hpp>
 #include <boost/geometry/core/access.hpp>
-#include <boost/niji/iterate.hpp>
-#include <boost/niji/support/command.hpp>
-#include <boost/niji/support/point.hpp>
-#include <boost/niji/support/transform/affine.hpp>
-#include <boost/niji/sink/svg.hpp>
+#include <niji/render.hpp>
+#include <niji/support/command.hpp>
+#include <niji/support/point.hpp>
+#include <niji/support/transform/affine.hpp>
+#include <niji/sink/svg.hpp>
 
-namespace boost { namespace niji { namespace svg
+namespace niji { namespace svg
 {
     struct rgb
     {
@@ -162,7 +163,7 @@ namespace boost { namespace niji { namespace svg
         void draw(Path const& path)
         {
             out << "<path d=\"";
-            iterate(path, basic_svg_sink<Ostream>(out));
+            render(path, basic_svg_sink<Ostream>(out));
             out << "\" " << _brush << ' ' << _pen << " />";
         }
 
@@ -203,6 +204,6 @@ namespace boost { namespace niji { namespace svg
     };
     
     using canvas = basic_canvas<std::ostream>;
-}}}
+}}
 
 #endif

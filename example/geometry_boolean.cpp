@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2014 Jamboree
+    Copyright (c) 2015 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -12,14 +12,14 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
-#include <boost/niji/adapted/polygon.hpp>
-#include <boost/niji/view/affine.hpp>
-#include <boost/niji/algorithm/bounds.hpp>
+#include <niji/geometry/polygon.hpp>
+#include <niji/view/affine.hpp>
+#include <niji/algorithm/bounds.hpp>
 #include "svg.hpp"
 
 int main()
 {
-    using namespace boost::niji;
+    using namespace niji;
     using point_type = boost::geometry::model::d2::point_xy<double>;
     using polygon = boost::geometry::model::polygon<point_type>;
 

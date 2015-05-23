@@ -1,17 +1,17 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2014 Jamboree
+    Copyright (c) 2015 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
 
 #include <fstream>
-#include <boost/niji/path.hpp>
-#include <boost/niji/support/point.hpp>
-#include <boost/niji/support/view.hpp>
+#include <niji/path.hpp>
+#include <niji/support/point.hpp>
+#include <niji/support/view.hpp>
 #include "svg.hpp"
 
-struct skeleton_view : boost::niji::view<skeleton_view>
+struct skeleton_view : niji::view<skeleton_view>
 {
     template<class Sink>
     struct adaptor
@@ -25,17 +25,17 @@ struct skeleton_view : boost::niji::view<skeleton_view>
         }
     
         template<class Point>
-        void operator()(boost::niji::quad_to_t, Point const& pt1, Point const& pt2) const
+        void operator()(niji::quad_to_t, Point const& pt1, Point const& pt2) const
         {
-            using namespace boost::niji::command;
+            using namespace niji::command;
             sink(line_to, pt1);
             sink(line_to, pt2);
         }
     
         template<class Point>
-        void operator()(boost::niji::cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3) const
+        void operator()(niji::cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3) const
         {
-            using namespace boost::niji::command;
+            using namespace niji::command;
             sink(line_to, pt1);
             sink(line_to, pt2);
             sink(line_to, pt3);
@@ -49,15 +49,15 @@ struct skeleton_view : boost::niji::view<skeleton_view>
     };
     
     template<class Path, class Sink>
-    void iterate(Path const& path, Sink& sink) const
+    void render(Path const& path, Sink& sink) const
     {
-        boost::niji::iterate(path, adaptor<Sink>{sink});
+        niji::render(path, adaptor<Sink>{sink});
     }
 
     template<class Path, class Sink>
-    void reverse_iterate(Path const& path, Sink& sink) const
+    void inverse_render(Path const& path, Sink& sink) const
     {
-        boost::niji::reverse_iterate(path, adaptor<Sink>{sink});
+        niji::inverse_render(path, adaptor<Sink>{sink});
     }
 };
 
@@ -65,7 +65,7 @@ constexpr skeleton_view skeleton = {};
 
 int main()
 {  
-    using namespace boost::niji;
+    using namespace niji;
 
     std::ofstream fout("skeleton_view.svg");
     svg::canvas canvas(fout, 500, 500);
