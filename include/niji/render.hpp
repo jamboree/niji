@@ -9,6 +9,7 @@
 
 #include <type_traits>
 #include <niji/path_fwd.hpp>
+#include <niji/geometry/render.hpp>
 #include <niji/support/traits.hpp>
 #include <niji/support/identifier.hpp>
 #include <niji/detail/priority.hpp>

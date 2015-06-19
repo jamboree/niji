@@ -19,15 +19,15 @@ namespace niji
     {
         using point_type = point<T>;
         
-        point_type origin;
+        point_type center;
         T rx, ry;
 
         ellipse(point_type const& pt, T r)
-          : origin(pt), rx(r), ry(r)
+          : center(pt), rx(r), ry(r)
         {}
 
         ellipse(point_type const& pt, T rx, T ry)
-          : origin(pt), rx(rx), ry(ry)
+          : center(pt), rx(rx), ry(ry)
         {}
         
         std::pair<T, T> radius() const
@@ -66,7 +66,7 @@ namespace niji
         {
             using namespace command;
 
-            T x = origin.x, y = origin.y,
+            T x = center.x, y = center.y,
               x1 = x + rx, x2 = x - rx,
               y1 = y + ry, y2 = y - ry;
             
