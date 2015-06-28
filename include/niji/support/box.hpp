@@ -44,12 +44,6 @@ namespace niji
         {}
 
         template<class Pt>
-        box(Pt const& min_corner, Pt const& max_corner)
-          : min_corner(convert_geometry<Point>(min_corner))
-          , max_corner(convert_geometry<Point>(max_corner))
-        {}
-
-        template<class Pt>
         box(box<Pt> const& other)
           : min_corner(convert_geometry<Point>(other.min_corner))
           , max_corner(convert_geometry<Point>(other.max_corner))
@@ -181,23 +175,64 @@ namespace niji
 
         void expand(box const& other)
         {
-            if (empty())
-                *this = other;
-            
-            expand_coord<0>(other);
-            expand_coord<1>(other);
+            using boost::geometry::get;
+
+            expand_coord<0>(get<0>(other.min_corner), get<0>(other.max_corner));
+            expand_coord<1>(get<1>(other.min_corner), get<1>(other.max_corner));
         }
         
         template<std::size_t N>
-        void expand_coord(box const& other)
+        void expand_coord(coord_t min, coord_t max)
         {
             using boost::geometry::get;
             using boost::geometry::set;
-    
-            if (get<N>(other.min_corner) < get<N>(min_corner))
-                set<N>(min_corner, get<N>(other.min_corner));
-            if (get<N>(other.max_corner) > get<N>(max_corner))
-                set<N>(max_corner, get<N>(other.max_corner));
+
+            auto min_ = get<N>(min_corner);
+            auto max_ = get<N>(max_corner);
+            if (min_ == max_)
+            {
+                set<N>(min_corner, min);
+                set<N>(max_corner, max);
+                return;
+            }
+            if (min < min_)
+                set<N>(min_corner, min);
+            if (max > max_)
+                set<N>(max_corner, max);
+        }
+
+        bool clip(box const& other)
+        {
+            using boost::geometry::get;
+
+            return
+                clip_coord<0>(get<0>(other.min_corner), get<0>(other.max_corner))
+             && clip_coord<1>(get<1>(other.min_corner), get<1>(other.max_corner));
+        }
+
+        template<std::size_t N>
+        bool clip_coord(coord_t min, coord_t max)
+        {
+            using boost::geometry::get;
+            using boost::geometry::set;
+
+            auto min_ = get<N>(min_corner);
+            auto max_ = get<N>(max_corner);
+            if (min_ >= max)
+            {
+                set<N>(max_corner, min_);
+                return false;
+            }
+            if (max_ <= min)
+            {
+                set<N>(min_corner, max_);
+                return false;
+            }
+            if (min_ < min)
+                set<N>(min_corner, min);
+            if (max < max_)
+                set<N>(max_corner, max);
+            return true;
         }
         
         template<std::size_t N>

@@ -99,6 +99,9 @@ namespace niji
               : _own(own), _moving(moving)
             {}
 
+            // silent MSVC warning C4512
+            cursor& operator=(cursor const&) = delete;
+
             void operator()(move_to_t, Node const& pt)
             {
                 _prev = pt;
@@ -141,9 +144,6 @@ namespace niji
                 }
             }
 
-            // silent MSVC warning C4512
-            cursor& operator=(cursor const&) = delete;
-            
             path& _own;
             Node _prev;
             bool _moving;
