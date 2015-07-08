@@ -15,30 +15,33 @@ namespace niji { namespace transforms
     template<class T>
     struct rotate
     {
-        T sa, ca;
+        T sin, cos;
 
         explicit rotate(T radian)
         {
             reset(radian);
         }
 
-        rotate(T sa, T ca)
-          : sa(sa), ca(ca)
+        rotate(T sin, T cos)
+          : sin(sin), cos(cos)
         {}
 
         void reset(T radian)
         {
-            using std::sin;
-            using std::cos;
-            
-            sa = sin(radian);
-            ca = cos(radian);
+            [](T radian, rotate& self)
+            {
+                using std::sin;
+                using std::cos;
+
+                self.sin = sin(radian);
+                self.cos = cos(radian);
+            }(radian, *this);
         }
         
         void reset(T sa2, T ca2)
         {
-            sa = sa2;
-            ca = ca2;
+            sin = sa2;
+            cos = ca2;
         }
 
         template<class Point>
@@ -46,7 +49,7 @@ namespace niji { namespace transforms
         {
             using boost::geometry::get;
             auto x = get<0>(pt), y = get<1>(pt);
-            return {x * ca - y * sa, x * sa + y * ca};
+            return {x * cos - y * sin, x * sin + y * cos};
         }
     };
 }}

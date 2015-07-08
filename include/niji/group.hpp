@@ -50,7 +50,7 @@ namespace niji
         using base_type::erase;
         using base_type::clear;
         
-        iterator swap_erase(iterator const& pos)
+        iterator unstable_erase(iterator const& pos)
         {
             using std::swap;
             if (boost::next(pos) == base_type::end())
@@ -58,8 +58,8 @@ namespace niji
                 base_type::pop_back();
                 return base_type::end();
             }
-            swap(base_type::front(), *pos);
-            base_type::pop_front();
+            *pos = std::move(base_type::back());
+            base_type::pop_back();
             return pos;
         }
         

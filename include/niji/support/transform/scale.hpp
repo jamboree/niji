@@ -15,32 +15,32 @@ namespace niji { namespace transforms
     template<class T>
     struct scale
     {
-        T sx, sy;
+        T x, y;
         
         explicit scale(T scale)
-          : sx(scale), sy(scale)
+          : x(scale), y(scale)
         {}
         
-        scale(T sx, T sy)
-          : sx(sx), sy(sy)
+        scale(T x, T y)
+          : x(x), y(y)
         {}
         
         void reset(T scale)
         {
-            sx = sy = scale;
+            x = y = scale;
         }
         
-        void reset(T sx2, T sy2)
+        void reset(T x2, T y2)
         {
-            sx = sx2;
-            sy = sy2;
+            x = x2;
+            y = y2;
         }
         
         template<class Point>
         point<T> operator()(Point const& pt) const
         {
             using boost::geometry::get;
-            return {get<0>(pt) * sx, get<1>(pt) * sy};
+            return {get<0>(pt) * x, get<1>(pt) * y};
         }
     };
 }}

@@ -11,6 +11,7 @@
 #include <niji/view/inverse.hpp>
 #include <niji/view/translate.hpp>
 #include <niji/support/view.hpp>
+#include <niji/support/just.hpp>
 
 namespace niji
 {

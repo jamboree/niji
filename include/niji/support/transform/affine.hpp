@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
+#include <niji/support/vector.hpp>
 
 namespace niji { namespace transforms
 {
@@ -24,6 +25,8 @@ namespace niji { namespace transforms
     
     template<class T>
     struct skew;
+
+    struct transpose;
     
     template<class Base>
     struct affine_inverse
@@ -57,65 +60,85 @@ namespace niji { namespace transforms
           : sx(1), shx(), tx()
           , shy(), sy(1), ty()
         {}
-        
-        affine(translate<T> const& m)
-          : sx(1), shx(), tx(m.tx)
-          , shy(), sy(1), ty(m.ty)
-        {}
-        
-        affine(scale<T> const& m)
-          : sx(m.sx), shx(), tx()
-          , shy(), sy(m.sy), ty()
+
+        affine(T sx, T shx, T tx, T shy, T sy, T ty)
+          : sx(sx), shx(shx), tx(tx)
+          , shy(shy), sy(sy), ty(ty)
         {}
 
-        affine(rotate<T> const& m)
-          : sx(m.ca), shx(-m.sa), tx()
-          , shy(m.sa), sy(m.ca), ty()
+        affine(translate<T> const& t)
+          : sx(1), shx(), tx(t.x)
+          , shy(), sy(1), ty(t.y)
+        {}
+        
+        affine(scale<T> const& s)
+          : sx(s.x), shx(), tx()
+          , shy(), sy(s.y), ty()
         {}
 
-        affine(skew<T> const& m)
-          : sx(1), shx(m.shx), tx()
-          , shy(m.shy), sy(1), ty()
+        affine(rotate<T> const& r)
+          : sx(r.cos), shx(-r.sin), tx()
+          , shy(r.sin), sy(r.cos), ty()
         {}
 
-        affine& append(translate<T> const& m)
+        affine(skew<T> const& sh)
+          : sx(1), shx(sh.x), tx()
+          , shy(sh.y), sy(1), ty()
+        {}
+
+        affine(transpose const&)
+          : sx(), shx(1), tx()
+          , shy(1), sy(), ty()
+        {}
+
+        affine& append(translate<T> const& t)
         {
-            return this->translate(m.tx, m.ty);
+            return this->translate(t.x, t.y);
         }
         
-        affine& append(scale<T> const& m)
+        affine& append(scale<T> const& s)
         {
-            return this->scale(m.sx, m.sy);
+            return this->scale(s.x, s.y);
         }
         
-        affine& append(rotate<T> const& m)
+        affine& append(rotate<T> const& r)
         {
-            return this->rotate(m.sa, m.ca);
+            return this->rotate(r.sin, r.cos);
         }
         
-        affine& append(skew<T> const& m)
+        affine& append(skew<T> const& sh)
         {
-            return this->skew(m.shx, m.shy);
+            return this->skew(sh.x, sh.y);
         }
 
-        affine& prepend(translate<T> const& m)
+        affine& append(transpose const&)
         {
-            return this->pre_translate(m.tx, m.ty);
+            return this->transpose();
         }
 
-        affine& prepend(scale<T> const& m)
+        affine& prepend(translate<T> const& t)
         {
-            return this->pre_scale(m.sx, m.sy);
+            return this->pre_translate(t.x, t.y);
+        }
+
+        affine& prepend(scale<T> const& s)
+        {
+            return this->pre_scale(s.x, s.y);
         }
         
-        affine& prepend(rotate<T> const& m)
+        affine& prepend(rotate<T> const& r)
         {
-            return this->pre_rotate(m.sa, m.ca);
+            return this->pre_rotate(r.sin, r.cos);
         }
         
-        affine& prepend(skew<T> const& m)
+        affine& prepend(skew<T> const& sh)
         {
-            return this->pre_skew(m.shx, m.shy);
+            return this->pre_skew(sh.x, sh.y);
+        }
+
+        affine& prepend(transpose const&)
+        {
+            return this->pre_transpose();
         }
 
         affine& translate(T x, T y)
@@ -125,11 +148,21 @@ namespace niji { namespace transforms
             return *this;
         }
 
+        affine& translate(vector<T> const& v)
+        {
+            return translate(v.x, v.y);
+        }
+
         affine& pre_translate(T x, T y)
         {
             tx += sx * x + shx * y;
             ty += shy * x + sy * y;
             return *this;
+        }
+
+        affine& pre_translate(vector<T> const& v)
+        {
+            return pre_translate(v.x, v.y);
         }
 
         affine& scale(T s)
@@ -223,6 +256,29 @@ namespace niji { namespace transforms
             shx = shx * ca - sx0 * sa;
             sy  = sy * ca - shy * sa;
             shy = shy * ca + sy0  * sa;
+            return *this;
+        }
+
+        affine& transpose()
+        {
+            T sx0 = sx, shx0 = shx, tx0 = tx;
+
+            sx = shy;
+            shx = sy;
+            shy = sx0;
+            sy = shx0;
+            tx = ty;
+            ty = tx0;
+            return *this;
+        }
+
+        affine& pre_transpose()
+        {
+            T shy0 = shy;
+
+            sx = shx;
+            shy = sy;
+            sy = shy0;
             return *this;
         }
 

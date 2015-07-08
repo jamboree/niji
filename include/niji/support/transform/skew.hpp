@@ -15,24 +15,24 @@ namespace niji { namespace transforms
     template<class T>
     struct skew
     {
-        T shx, shy;
+        T x, y;
 
-        skew(T shx, T shy)
-          : shx(shx), shy(shy)
+        skew(T x, T y)
+          : x(x), y(y)
         {}
 
-        void reset(T shx2, T shy2)
+        void reset(T x2, T y2)
         {
-            shx = shx2;
-            shy = shy2;
+            x = x2;
+            y = y2;
         }
         
         template<class Point>
         point<T> operator()(Point const& pt) const
         {
             using boost::geometry::get;
-            auto x = get<0>(pt), y = get<1>(pt);
-            return {x + shx * y, y + shy * x};
+            auto x2 = get<0>(pt), y2 = get<1>(pt);
+            return {x2 + x * y2, y2 + y * x2};
         }
     };
 }}
