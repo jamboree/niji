@@ -56,16 +56,17 @@ namespace niji
 #   if defined(NIJI_NO_CUBIC_APPROX)
             point<T> pts[17];
             auto it = pts, end = bezier::build_quad_arc(u, v, stop > start, &affine, pts);
-            sink(line_to, *it++);
+            sink(move_to, *it++);
             for ( ; it != end; it += 2)
-                sink(cubic_to, *it, it[1]);
+                sink(quad_to, *it, it[1]);
 #   else
             point<T> pts[13];
             auto it = pts, end = bezier::build_cubic_arc(u, v, stop > start, &affine, pts);
-            sink(line_to, *it++);
+            sink(move_to, *it++);
             for ( ; it != end; it += 3)
                 sink(cubic_to, *it, it[1], it[2]);
 #   endif
+            sink(end_line);
         }
     };
 }

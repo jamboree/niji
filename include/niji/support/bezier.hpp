@@ -44,7 +44,7 @@ namespace niji { namespace detail
         T* r = roots;
 
         T root = b * b - 4 * a * c;
-        if (root < 0 || math::isnan(root)) // complex roots
+        if (root < 0 || boost::math::isnan(root)) // complex roots
             return roots;
 
         root = sqrt(root);
@@ -866,7 +866,7 @@ namespace niji { namespace bezier
             }
     
             int whole_count = quad * 3;
-            point<T> const* q = cubic_circle_points<T>().begin();
+            auto q = cubic_circle_points<T>().begin();
             std::copy(q, q + (whole_count + 4), out);
             if (truncate_cubic_at(out + whole_count, point<T>(x, y)))
                 whole_count += 3;
