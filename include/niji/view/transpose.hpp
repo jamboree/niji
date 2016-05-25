@@ -12,16 +12,7 @@
 
 namespace niji { namespace views
 {
-    using transforms::transpose;
-}}
-
-namespace niji { namespace transforms
-{
-    template<class Path>
-    inline auto operator|(Path&& path, transpose t)
-    {
-        return std::forward<Path>(path) | views::transform(std::move(t));
-    }
+    using transpose = transform_view<transforms::transpose>;
 }}
 
 #endif

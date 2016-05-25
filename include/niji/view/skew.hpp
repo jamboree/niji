@@ -12,22 +12,8 @@
 
 namespace niji { namespace views
 {
-    using transforms::skew;
-}}
-
-namespace niji { namespace transforms
-{
-    template<class Path, class T>
-    inline auto operator|(Path&& path, skew<T>&& d)
-    {
-        return std::forward<Path>(path) | views::transform(std::move(d));
-    }
-    
-    template<class Path, class T>
-    inline auto operator|(Path&& path, skew<T> const& d)
-    {
-        return std::forward<Path>(path) | views::transform(d);
-    }
+    template<class T>
+    using skew = transform_view<transforms::skew<T>>;
 }}
 
 #endif

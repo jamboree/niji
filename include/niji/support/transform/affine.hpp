@@ -353,12 +353,12 @@ namespace niji { namespace transforms
 
         affine& prepend(affine const& m)
         {
-            T shy0 = shy;
+            T sx0 = sx, shy0 = shy;
 
             tx = m.tx * sx + m.ty * shx + tx;
             ty = m.tx * shy + m.ty * sy + ty;
             sx = m.sx * sx + m.shy * shx;
-            shx = (m.shx + m.sy) * shx;
+            shx = m.shx * sx0 + m.sy * shx;
             shy = m.sx * shy + m.shy * sy;
             sy = m.shx * shy0 + m.sy * sy;
             return *this;

@@ -89,8 +89,8 @@ namespace niji
     };
 
     template<class Path, class T, class Joiner>
-    struct path_cache<path_view<Path, offset_view<T, Joiner>>>
-      : default_path_cache<path_view<Path, offset_view<T, Joiner>>>
+    struct path_cache<path_adaptor<Path, offset_view<T, Joiner>>>
+      : default_path_cache<path_adaptor<Path, offset_view<T, Joiner>>>
     {};
 }
 

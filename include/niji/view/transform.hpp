@@ -13,16 +13,12 @@
 namespace niji
 {
     template<class F>
-    struct transform_view : view<transform_view<F>>
+    struct transform_view : view<transform_view<F>>, F
     {
         template<class Path>
         using point_type = typename std::result_of<F(path_point_t<Path>)>::type;
 
-        F f;
-        
-        explicit transform_view(F f)
-          : f(std::forward<F>(f))
-        {}
+        using F::F;
 
         template<class Sink>
         struct adaptor
@@ -34,19 +30,19 @@ namespace niji
             }
 
             Sink& _sink;
-            std::add_lvalue_reference_t<F const> _f;
+            F const& _f;
         };
 
         template<class Path, class Sink>
         void render(Path const& path, Sink& sink) const
         {
-            niji::render(path, adaptor<Sink>{sink, f});
+            niji::render(path, adaptor<Sink>{sink, *this});
         }
 
         template<class Path, class Sink>
         void inverse_render(Path const& path, Sink& sink) const
         {
-            niji::inverse_render(path, adaptor<Sink>{sink, f});
+            niji::inverse_render(path, adaptor<Sink>{sink, *this});
         }
     };
 }
@@ -56,7 +52,7 @@ namespace niji { namespace views
     template<class F>
     inline auto transform(F&& f)
     {
-        return transform_view<F>{std::forward<F>(f)};
+        return transform_view<std::decay_t<F>>{std::forward<F>(f)};
     }
 }}
 
