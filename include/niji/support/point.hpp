@@ -104,7 +104,7 @@ namespace niji
             return ret -= other;
         }
         
-        template<class U>
+        template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
         point& operator*=(U const& val)
         {
             x *= val;
@@ -120,7 +120,7 @@ namespace niji
             return *this;
         }
         
-        template<class U>
+        template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
         point<std::common_type_t<T, U>>
         operator*(U const& val) const
         {
@@ -136,7 +136,7 @@ namespace niji
             return ret *= other;
         }
         
-        template<class U>
+        template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
         point& operator/=(U const& val)
         {
             x /= val;
@@ -152,7 +152,7 @@ namespace niji
             return *this;
         }
         
-        template<class U>
+        template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
         point<std::common_type_t<T, U>>
         operator/(U const& val) const
         {

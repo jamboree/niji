@@ -175,7 +175,10 @@ namespace niji { namespace detail
             return pt.x + pt.y;
         };
 
-        T c0 = sum(c * c), c1 = sum(b * c * 3), c2 = sum(b * b * 2 + c * a), c3 = sum(a * b);
+        T c0 = sum(c * c);
+        T c1 = sum(b * c * 3);
+        T c2 = sum(b * b * 2 + c * a);
+        T c3 = sum(a * b);
         if (is_nearly_zero(c0)) // we're just a quadratic
             return find_unit_quad_roots(c1, c2, c3, tValues);
             

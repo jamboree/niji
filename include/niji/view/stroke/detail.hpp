@@ -349,9 +349,9 @@ namespace niji { namespace detail
         void finish(Sink& sink, bool reversed)
         {
             if (reversed)
-                _outer.counter_iterate(sink);
+                _outer.inverse_render(sink);
             else
-                _outer.iterate(sink);
+                _outer.render(sink);
             _outer.clear();
             _seg_count = 0;
         }
