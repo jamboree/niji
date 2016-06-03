@@ -7,9 +7,12 @@
 #ifndef NIJI_SINK_NVPR_HPP_INCLUDED
 #define NIJI_SINK_NVPR_HPP_INCLUDED
 
+// We don't include any GL binding here so that the user can choose
+// which binding he want to use. e.g.
+// #include <GL/glew.h>
+
 #include <niji/support/command.hpp>
 #include <niji/support/point.hpp>
-#include <GL/glew.h>
 #include <vector>
 
 namespace niji
@@ -23,26 +26,26 @@ namespace niji
 
         void operator()(move_to_t, point_t const& pt)
         {
-            commands.push_back(GL_MOVE_TO_NV);
+            commands.push_back(GLubyte(GL_MOVE_TO_NV));
             points.push_back(pt);
         }
 
         void operator()(line_to_t, point_t const& pt)
         {
-            commands.push_back(GL_LINE_TO_NV);
+            commands.push_back(GLubyte(GL_LINE_TO_NV));
             points.push_back(pt);
         }
 
         void operator()(quad_to_t, point_t const& pt1, point_t const& pt2)
         {
-            commands.push_back(GL_QUADRATIC_CURVE_TO_NV);
+            commands.push_back(GLubyte(GL_QUADRATIC_CURVE_TO_NV));
             points.push_back(pt1);
             points.push_back(pt2);
         }
 
         void operator()(cubic_to_t, point_t const& pt1, point_t const& pt2, point_t const& pt3)
         {
-            commands.push_back(GL_CUBIC_CURVE_TO_NV);
+            commands.push_back(GLubyte(GL_CUBIC_CURVE_TO_NV));
             points.push_back(pt1);
             points.push_back(pt2);
             points.push_back(pt3);
@@ -52,7 +55,7 @@ namespace niji
 
         void operator()(end_poly_t)
         {
-            commands.push_back(GL_CLOSE_PATH_NV);
+            commands.push_back(GLubyte(GL_CLOSE_PATH_NV));
         }
 
         void flush(GLuint path)

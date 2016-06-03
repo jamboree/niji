@@ -31,19 +31,19 @@ namespace niji
         }
         
         template<class Point>
-        void operator()(move_to_t, Point const& pt) const
+        void operator()(move_to_t, Point const& pt)
         {
             geometry_sink->BeginFigure(cvt_point(pt), figure_begin);
         }
         
         template<class Point>
-        void operator()(line_to_t, Point const& pt) const
+        void operator()(line_to_t, Point const& pt)
         {
             geometry_sink->AddLine(cvt_point(pt));
         }
         
         template<class Point>
-        void operator()(quad_to_t, Point const& pt1, Point const& pt2) const
+        void operator()(quad_to_t, Point const& pt1, Point const& pt2)
         {
             geometry_sink->AddQuadraticBezier(
             {
@@ -52,7 +52,7 @@ namespace niji
         }
         
         template<class Point>
-        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3) const
+        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3)
         {
             using boost::geometry::get;
             geometry_sink->AddBezier(
@@ -61,12 +61,12 @@ namespace niji
             });
         }
         
-        void operator()(end_line_t) const
+        void operator()(end_line_t)
         {
             geometry_sink->EndFigure(::D2D1_FIGURE_END_OPEN);
         }
         
-        void operator()(end_poly_t) const
+        void operator()(end_poly_t)
         {
             geometry_sink->EndFigure(::D2D1_FIGURE_END_CLOSED);
         }

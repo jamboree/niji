@@ -23,20 +23,20 @@ namespace niji
         {}
         
         template<class Point>
-        void operator()(move_to_t, Point const& pt) const
+        void operator()(move_to_t, Point const& pt)
         {
             using boost::geometry::get;
             ::cairo_move_to(context, get<0>(pt), get<1>(pt));
         }
         
         template<class Point>
-        void operator()(line_to_t, Point const& pt) const
+        void operator()(line_to_t, Point const& pt)
         {
             using boost::geometry::get;
             ::cairo_line_to(context, get<0>(pt), get<1>(pt));
         }
 
-        void operator()(quad_to_t, dpoint pt1, dpoint const& pt2) const
+        void operator()(quad_to_t, dpoint pt1, dpoint const& pt2)
         {
             dpoint pt0;
             ::cairo_get_current_point(context, &pt0.x, &pt0.y);
@@ -47,15 +47,15 @@ namespace niji
         }
         
         template<class Point>
-        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3) const
+        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3)
         {
             using boost::geometry::get;
             ::cairo_curve_to(context, get<0>(pt1), get<1>(pt1), get<0>(pt2), get<1>(pt2), get<0>(pt3), get<1>(pt3));
         }
         
-        void operator()(end_line_t) const {}
+        void operator()(end_line_t) {}
 
-        void operator()(end_poly_t) const
+        void operator()(end_poly_t)
         {
             ::cairo_close_path(context);
         }

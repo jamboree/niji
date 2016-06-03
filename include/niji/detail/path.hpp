@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2016 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -9,18 +9,12 @@
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/geometry/core/coordinate_type.hpp>
-#include <boost/geometry/core/tag.hpp>
-#include <boost/geometry/core/point_order.hpp>
-#include <boost/geometry/core/closure.hpp>
-#include <boost/range/reference.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/adaptor/transformed.hpp>
-#include <boost/range/algorithm/min_element.hpp>
 #include <niji/render.hpp>
 #include <niji/support/command.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
-#include <niji/detail/coord_fn.hpp>
 
 namespace niji { namespace detail
 {
@@ -137,47 +131,6 @@ namespace niji { namespace detail
         }
         return !heading; // ended
     }
-    
-    template<class It>
-    It find_different_cyclic(It const& begin, It const& pos, It const& end)
-    {
-        BOOST_ASSERT(pos != end);
-            
-        typename boost::iterator_reference<It>::type val(*pos);
-        for (It it(pos); ++it != end; )
-            if (*it != val)
-                return it;
-                
-        for (It it(begin); it != pos; ++it)
-            if (*it != val)
-                return it;
-
-        return end;
-    }
-
-    template<class NodeIt>
-    bool path_is_ccw(NodeIt const& begin, NodeIt const& end)
-    {
-        namespace rng = ::boost::adaptors;
-
-        using node_t = typename boost::iterator_value<NodeIt>::type;
-        using coord_t = typename boost::geometry::coordinate_type<node_t>::type;
-        using reverse = boost::reverse_iterator<NodeIt>;
-
-        auto n = end - begin;
-        if (n < 3)
-            return false;
-
-        auto it = min_element(rng::transform(make_iterator_range(begin, end), coord_fn<1>())).base();
-        point<coord_t> pt(*it);
-        point<coord_t> next(*find_different_cyclic(begin, it, end));
-        point<coord_t> prev(*find_different_cyclic(reverse(end), reverse(++it), reverse(begin)));
-        if (coord_t cross = vectors::cross(pt - prev, next - pt))
-            return cross > 0;
-        else if (pt.y == prev.y && pt.y == next.y) // horizontal
-            return pt.x > prev.x || next.x > pt.x;
-        return false;
-    }
 
     template<class NodeIt>
     bool path_is_box(NodeIt it, NodeIt const& end)
@@ -209,23 +162,12 @@ namespace niji { namespace detail
         return p[i] == c[i];
     }
     
-    template<class It>
-    struct path_ring : boost::iterator_range<It>
-    {
-        path_ring() = default;
-        
-        path_ring(It const& begin, It const& end)
-          : boost::iterator_range<It>(begin, end)
-        {}
-    };
-    
     template<class NodeIt, class IndexIt>
     struct pathlet
     {
         using point_type = typename NodeIt::value_type;
         using iterator = NodeIt;
         using const_iterator = NodeIt;
-        using ring_type = path_ring<NodeIt>;
 
         pathlet() = default;
 
@@ -243,12 +185,7 @@ namespace niji { namespace detail
         {
             return _end;
         }
-        
-        ring_type ring() const
-        {
-            return {begin(), end()};
-        }
-        
+
         bool empty() const
         {
             return begin() == _end;
@@ -259,11 +196,6 @@ namespace niji { namespace detail
             return _offset & 1;
         }
 
-        bool is_ccw() const
-        {
-            return path_is_ccw(begin(), end());
-        }
-        
         bool is_box() const
         {
             return path_is_box(begin(), end());
@@ -276,7 +208,7 @@ namespace niji { namespace detail
         }
         
         template<class Sink>
-        void counter_render(Sink& sink) const
+        void inverse_render(Sink& sink) const
         {
             namespace rng = ::boost::adaptors;
             
@@ -429,26 +361,5 @@ namespace niji { namespace detail
         boost::iterator_range<IndexIt> _index_tags;
     };
 }}
-
-namespace boost { namespace geometry { namespace traits
-{
-    template<class It>
-    struct tag<niji::detail::path_ring<It>>
-    {
-        typedef ring_tag type;
-    };
-    
-    template<class It>
-    struct point_order<niji::detail::path_ring<It>>
-    {
-        static constexpr order_selector value = counterclockwise;
-    };
-
-    template<class It>
-    struct closure<niji::detail::path_ring<It>>
-    {
-        static constexpr closure_selector value = open;
-    };
-}}}
 
 #endif

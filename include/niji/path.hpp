@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2016 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -51,16 +51,10 @@ namespace niji
         using nodes_base::size;
         using nodes_base::empty;
 
-        using ring_view = detail::path_ring<const_iterator>;
         using parts_view = detail::path_partition<iterator, index_tag_iterator>;
         using const_parts_view = detail::path_partition<const_iterator, index_tag_iterator>;
         using incomplete_view = detail::incomplete_path<const_iterator, index_tag_iterator>;
-        
-        ring_view ring() const
-        {
-            return {nodes_base::begin(), nodes_base::end()};
-        }
-        
+
         parts_view parts()
         {
             return {nodes_base::begin(), nodes_base::end(), _index_tags.begin(), _index_tags.end()};
@@ -76,11 +70,6 @@ namespace niji
             return {nodes_base::begin(), nodes_base::end(), _index_tags.begin(), _index_tags.end()};
         }
 
-        bool is_ccw() const
-        {
-            return detail::path_is_ccw(nodes_base::begin(), nodes_base::end());
-        }
-        
         bool is_box() const
         {
             return detail::path_is_box(nodes_base::begin(), nodes_base::end());

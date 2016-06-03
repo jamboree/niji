@@ -44,7 +44,7 @@ namespace niji
             {}
               
             template<class Point>
-            void operator()(Point const& pt) const
+            void operator()(Point const& pt)
             {
                 using boost::geometry::get;
 
@@ -53,7 +53,7 @@ namespace niji
         };
         
         template<class Point>
-        void operator()(tag_str tag, Point const& pt) const
+        void operator()(tag_str tag, Point const& pt)
         {
             using boost::geometry::get;
             
@@ -63,7 +63,7 @@ namespace niji
         }
 
         template<class Point>
-        void operator()(quad_to_t, Point const& pt1, Point const& pt2) const
+        void operator()(quad_to_t, Point const& pt1, Point const& pt2)
         {
             out << "quad_to";
             print_pt print(out);
@@ -72,7 +72,7 @@ namespace niji
         }
         
         template<class Point>
-        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3) const
+        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3)
         {
             out << "cubic_to";
             print_pt print(out);
@@ -80,12 +80,12 @@ namespace niji
             out << std::endl;
         }
  
-        void operator()(end_line_t) const
+        void operator()(end_line_t)
         {
             out << "end_line\n";
         }
 
-        void operator()(end_poly_t) const
+        void operator()(end_poly_t)
         {
             out << "end_poly\n";
         }

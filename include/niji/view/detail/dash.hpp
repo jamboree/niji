@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2016 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,15 +21,15 @@
 
 namespace niji { namespace detail
 {
-    template<class T, class Iterator>
+    template<class T, class U, class Iterator>
     struct dasher
     {
         using point_t = point<T>;
         using vector_t = vector<T>;
         
-        dasher(Iterator const& begin, Iterator const& end, T offset)
+        dasher(Iterator const& begin, Iterator const& end, T offset, U weight)
           : _begin(begin), _end(end), _it(begin)
-          , _offset(), _skip(), _gap()
+          , _offset(), _weight(weight), _skip(), _gap()
         {
             using std::fmod;
             
@@ -39,7 +39,7 @@ namespace niji { namespace detail
             {
                 for (T sum = 0; ; )
                 {
-                    sum += *_it;
+                    sum += _weight * (*_it);
                     if (sum >= offset)
                     {
                         _offset = sum - offset;
@@ -151,7 +151,7 @@ namespace niji { namespace detail
             default:
                 for ( ; ; )
                 {
-                    sum += *_it;
+                    sum += _weight * (*_it);
                     if (sum >= len)
                     {
                         _offset = sum - len;
@@ -171,7 +171,7 @@ namespace niji { namespace detail
                     act.join(sum, len);
                     act.cut();
             case true:
-                    sum += *_it;
+                    sum += _weight * (*_it);
                     if (++_it == _end)
                         _it = _begin;
                     if (sum >= len)
@@ -351,6 +351,7 @@ namespace niji { namespace detail
         Iterator _it;
         point_t _prev_pt, _first_pt;
         T _offset;
+        U _weight;
         bool _skip, _gap;
     };
 }}

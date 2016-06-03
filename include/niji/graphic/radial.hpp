@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2016 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,12 +8,7 @@
 #define NIJI_GRAPHIC_RADIAL_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/fusion/include/at_c.hpp>
-#include <boost/fusion/include/single_view.hpp>
-#include <boost/fusion/include/transform.hpp>
-#include <boost/fusion/include/pop_front.hpp>
-#include <boost/fusion/include/zip.hpp>
-#include <boost/fusion/include/for_each.hpp>
+#include <array>
 #include <niji/support/command.hpp>
 #include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
@@ -21,40 +16,40 @@
 
 namespace niji
 {
-    template<class T, class U = T>
+    template<class T, std::size_t N = 1>
     struct radial
     {
         using point_type = point<T>;
-        
-        using view_t = std::conditional_t<
-            boost::fusion::traits::is_sequence<U>::value
-          , U const&, boost::fusion::single_view<U>>;
-        
+
+        using store_t = std::conditional_t<(N > 1), std::array<T, N>, T>;
+        using param_t = std::conditional_t<(N > 1), std::array<T, N> const&, T>;
+        using view_t = std::conditional_t<(N > 1), std::array<T, N> const&, std::array<T, N>>;
+
         point_type origin;
-        T r;
-        U theta; // To turn side up, use radian = PI / n
+        store_t r;
+        store_t theta; // To turn side up, use radian = PI / n
         std::size_t n;
 
-        radial(std::size_t n, point_type const& pt, U const& r, U const& theta = {})
+        radial(std::size_t n, point_type const& pt, param_t r, param_t theta = {})
           : origin(pt), r(r), theta(theta), n(n)
         {}
 
         template<class Sink>
         void render(Sink& sink) const
         {
-            render_impl(sink, constants::two_pi<T>(), view_t(r), view_t(theta));
+            render_impl(sink, constants::two_pi<T>(), {r}, {theta});
         }
         
         template<class Sink>
         void inverse_render(Sink& sink) const
         {
-            render_impl(sink, -constants::two_pi<T>(), view_t(r), view_t(theta));
+            render_impl(sink, -constants::two_pi<T>(), {r}, {theta});
         }
 
     private:
 
-        template<class Sink, class Us>
-        void render_impl(Sink& sink, T da, Us const& r, Us const& theta) const
+        template<class Sink>
+        void render_impl(Sink& sink, T da, view_t r, view_t theta) const
         {
             using namespace command;
             using std::sin;
@@ -64,41 +59,40 @@ namespace niji
                 return;
             
             da /= n;
-            
-            auto add_half_pi =
-                [](T val) { return val + constants::half_pi<T>(); };
 
-            typename boost::fusion::result_of::as_vector<Us>::type
-                d(boost::fusion::transform(theta, add_half_pi));
+            std::array<T, N> d(theta);
+            for (T& di : d)
+                di += constants::half_pi<T>();
 
-            auto d1 = boost::fusion::at_c<0>(d);
-            auto r1 = boost::fusion::at_c<0>(r);
+            auto d1 = d[0];
+            auto r1 = r[0];
             sink(move_to, point_type{origin.x + cos(d1) * r1, origin.y + sin(d1) * r1});
-            boost::fusion::for_each(boost::fusion::pop_front(boost::fusion::zip(d, r)), [&sink, this](auto&& zip)
+            for (std::size_t i = 0; i != N; ++i)
             {
-                auto d = boost::fusion::at_c<0>(zip);
-                auto r = boost::fusion::at_c<1>(zip);
-                sink(line_to, point_type{origin.x + cos(d) * r, origin.y + sin(d) * r});
-            });
-            auto fn = [&sink, da, this](T d, T r)
+                auto di = d[i];
+                auto ri = r[i];
+                sink(line_to, point_type{origin.x + cos(di) * ri, origin.y + sin(di) * ri});
+            }
+
+            auto fn = [&]
             {
-                d += da;
-                sink(line_to, point_type{origin.x + cos(d) * r, origin.y + sin(d) * r});
-                return d;
+                for (std::size_t i = 0; i != N; ++i)
+                {
+                    auto di = d[i] += da;
+                    auto ri = r[i];
+                    sink(line_to, point_type{origin.x + cos(di) * ri, origin.y + sin(di) * ri});
+                }
             };
+
             std::size_t m = n - 1, k = (m - 1) >> 2, i = 0;
             switch (m & 3u)
             {
                 do
                 {
-            case 0:
-                    d = boost::fusion::transform(d, r, fn);
-            case 3:
-                    d = boost::fusion::transform(d, r, fn);
-            case 2:
-                    d = boost::fusion::transform(d, r, fn);
-            case 1:
-                    d = boost::fusion::transform(d, r, fn);
+            case 0: fn();
+            case 3: fn();
+            case 2: fn();
+            case 1: fn();
                 } while (i++ != k);
             }
             sink(end_poly);

@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2016 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,17 +13,19 @@
 #include <niji/support/view.hpp>
 #include <niji/support/just.hpp>
 #include <niji/view/detail/dash.hpp>
+#include <niji/support/math/invariant.hpp>
 
 namespace niji
 {
-    template<class T, class Pattern>
-    struct dash_view : view<dash_view<T, Pattern>>
+    template<class T, class Pattern, class U>
+    struct dash_view : view<dash_view<T, Pattern, U>>
     {
         template<class Path>
         using point_type = point<T>;
         
         Pattern pattern;
         T offset;
+        U weight;
         
         template<class Sink>
         struct adaptor
@@ -62,13 +64,14 @@ namespace niji
                 boost::range_iterator<std::remove_reference_t<Pattern> const>::type;
     
             Sink& _sink;
-            detail::dasher<T, iterator_t> _dasher;
+            detail::dasher<T, U, iterator_t> _dasher;
         };
         
         dash_view() = default;
         
-        explicit dash_view(Pattern pattern, T offset = {})
-          : pattern(std::forward<Pattern>(pattern)), offset(offset)
+        explicit dash_view(Pattern pattern, T offset = {}, U weight = {})
+          : pattern(std::forward<Pattern>(pattern))
+          , offset(offset), weight(weight)
         {}
 
         template<class Path, class Sink>
@@ -76,7 +79,7 @@ namespace niji
         {
             auto i = std::begin(pattern), e = std::end(pattern);
             if (i != e)
-                niji::render(path, adaptor<Sink>{sink, {i, e, offset}});
+                niji::render(path, adaptor<Sink>{sink, {i, e, offset, weight}});
         }
         
         template<class Path, class Sink>
@@ -86,24 +89,18 @@ namespace niji
         }
     };
 
-    template<class Path, class T, class Pattern>
-    struct path_cache<path_adaptor<Path, dash_view<T, Pattern>>>
-      : default_path_cache<path_adaptor<Path, dash_view<T, Pattern>>>
+    template<class Path, class T, class Pattern, class U>
+    struct path_cache<path_adaptor<Path, dash_view<T, Pattern, U>>>
+      : default_path_cache<path_adaptor<Path, dash_view<T, Pattern, U>>>
     {};
 }
 
 namespace niji { namespace views
 {
-    template<class T, class Pattern>
-    inline auto dash(Pattern&& p, just_t<T> offset = {})
+    template<class T, class Pattern = std::initializer_list<T> const&, class U = one>
+    inline auto dash(Pattern&& p, just_t<T> offset = {}, U weight = {})
     {
-        return dash_view<T, Pattern>{std::forward<Pattern>(p), offset};
-    }
-    
-    template<class T>
-    inline auto dash(std::initializer_list<just_t<T>> const& p, just_t<T> offset = {})
-    {
-        return dash_view<T, std::initializer_list<T> const&>{p, offset};
+        return dash_view<T, Pattern, U>{std::forward<Pattern>(p), offset, weight};
     }
 }}
 
