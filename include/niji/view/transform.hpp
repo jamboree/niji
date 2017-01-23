@@ -20,6 +20,9 @@ namespace niji
 
         using F::F;
 
+        transform_view(F&& f) : F(std::move(f)) {}
+        transform_view(F const& f) : F(f) {}
+
         template<class Sink>
         struct adaptor
         {

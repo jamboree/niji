@@ -12,34 +12,8 @@
 
 namespace niji { namespace views
 {
-    using transforms::affine;
-}}
-
-namespace niji { namespace transforms
-{
-    template<class Path, class T>
-    inline auto operator|(Path&& path, affine<T>&& d)
-    {
-        return std::forward<Path>(path) | views::transform(std::move(d));
-    }
-    
-    template<class Path, class T>
-    inline auto operator|(Path&& path, affine<T> const& d)
-    {
-        return std::forward<Path>(path) | views::transform(d);
-    }
-    
-    template<class Path, class T>
-    inline auto operator|(Path&& path, affine_inverse<T>&& d)
-    {
-        return std::forward<Path>(path) | views::transform(std::move(d));
-    }
-    
-    template<class Path, class T>
-    inline auto operator|(Path&& path, affine_inverse<T> const& d)
-    {
-        return std::forward<Path>(path) | views::transform(d);
-    }
+    template<class T>
+    using affine = transform_view<transforms::affine<T>>;
 }}
 
 #endif
