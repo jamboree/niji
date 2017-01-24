@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,14 +10,14 @@
 #include <type_traits>
 #include <functional>
 #include <niji/render.hpp>
-#include <niji/detail/any_sink.hpp>
+#include <niji/sink/any.hpp>
 
 namespace niji
 {
     template<class Point>
     class any_path
     {
-        using sink_t = detail::any_sink<Point>;
+        using sink_t = any_sink<Point>;
         
         template<class Path>
         struct holder

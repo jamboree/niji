@@ -9,14 +9,14 @@
 
 #include <type_traits>
 #include <niji/render.hpp>
-#include <niji/detail/any_sink.hpp>
+#include <niji/sink/any.hpp>
 
 namespace niji
 {
     template<class Point>
     class path_ref
     {
-        using sink_t = detail::any_sink<Point>;
+        using sink_t = any_sink<Point>;
         
         template<class Path>
         using requires_valid = std::enable_if_t<

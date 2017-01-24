@@ -1,15 +1,15 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef NIJI_DETAIL_ANY_SINK_HPP_INCLUDED
-#define NIJI_DETAIL_ANY_SINK_HPP_INCLUDED
+#ifndef NIJI_SINK_ANY_HPP_INCLUDED
+#define NIJI_SINK_ANY_HPP_INCLUDED
 
 #include <niji/support/command.hpp>
 
-namespace niji { namespace detail
+namespace niji { namespace any_sink_detail
 {
     template<class... Ts>
     struct vtable
@@ -37,14 +37,17 @@ namespace niji { namespace detail
             (*static_cast<F*>(p))(std::forward<Ts>(ts)...);
         }
     };
-    
+}}
+
+namespace niji
+{
     template<class Point>
     struct any_sink
     {
         template<class Sink>
         any_sink(Sink& sink)
           : _sink(&sink)
-          , _f(vgen<Sink>())
+          , _f(any_sink_detail::vgen<Sink>())
         {}
 
         template<class Tag, class... Points>
@@ -54,7 +57,7 @@ namespace niji { namespace detail
         }
         
         void* _sink;
-        vtable
+        any_sink_detail::vtable
         <
             void(void*, move_to_t, Point const&)
           , void(void*, line_to_t, Point const&)
@@ -64,6 +67,6 @@ namespace niji { namespace detail
           , void(void*, end_poly_t)
         > _f;
     };
-}}
+}
 
 #endif
