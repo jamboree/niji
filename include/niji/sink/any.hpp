@@ -63,8 +63,8 @@ namespace niji
           , void(void*, line_to_t, Point const&)
           , void(void*, quad_to_t, Point const&, Point const&)
           , void(void*, cubic_to_t, Point const&, Point const&, Point const&)
-          , void(void*, end_line_t)
-          , void(void*, end_poly_t)
+          , void(void*, end_open_t)
+          , void(void*, end_closed_t)
         > _f;
     };
 }

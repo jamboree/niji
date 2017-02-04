@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -97,7 +97,7 @@ namespace niji
             sink(cubic_to, point_type{x2, y4}, point_type{x4, y2}, point_type{x, y2});
             sink(cubic_to, point_type{x3, y2}, point_type{x1, y4}, point_type{x1, y});
 #   endif
-            sink(end_poly);
+            sink(end_closed);
         }
     };
 }

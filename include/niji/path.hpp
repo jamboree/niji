@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2016 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -51,16 +51,16 @@ namespace niji
         using nodes_base::size;
         using nodes_base::empty;
 
-        using parts_view = detail::path_partition<iterator, index_tag_iterator>;
-        using const_parts_view = detail::path_partition<const_iterator, index_tag_iterator>;
+        using figures_view = detail::path_partition<iterator, index_tag_iterator>;
+        using const_figures_view = detail::path_partition<const_iterator, index_tag_iterator>;
         using incomplete_view = detail::incomplete_path<const_iterator, index_tag_iterator>;
 
-        parts_view parts()
+        figures_view figures()
         {
             return {nodes_base::begin(), nodes_base::end(), _index_tags.begin(), _index_tags.end()};
         }
 
-        const_parts_view parts() const
+        const_figures_view figures() const
         {
             return {nodes_base::begin(), nodes_base::end(), _index_tags.begin(), _index_tags.end()};
         }
@@ -82,14 +82,14 @@ namespace niji
                     _index_tags.back().index == nodes_base::size());
         }
 
-        struct cursor
+        struct sink
         {
-            explicit cursor(path& own, bool moving = true)
+            explicit sink(path& own, bool moving = true)
               : _own(own), _moving(moving)
             {}
 
             // silent MSVC warning C4512
-            cursor& operator=(cursor const&) = delete;
+            sink& operator=(sink const&) = delete;
 
             void operator()(move_to_t, Node const& pt)
             {
@@ -140,7 +140,7 @@ namespace niji
         
         template<class Path>
         using requires_valid =
-            std::enable_if_t<is_renderable<Path, cursor>::value, bool>;
+            std::enable_if_t<is_renderable<Path, sink>::value, bool>;
 
         // Constructors
         //----------------------------------------------------------------------
@@ -190,7 +190,7 @@ namespace niji
         void render(Sink& sink) const
         {
             if (detail::path_render_impl(sink, static_cast<nodes_base const&>(*this), _index_tags))
-                sink(command::end_line);
+                sink(command::end_open);
         }
         
         template<class Sink>
@@ -210,9 +210,9 @@ namespace niji
             if (needs_ending)
             {
                 if (tag == end_tag::poly)
-                    sink(end_poly);
+                    sink(end_closed);
                 else
-                    sink(end_line);
+                    sink(end_open);
             }
         }
 
@@ -245,7 +245,7 @@ namespace niji
         template<class Path>
         void join_path(Path const& p)
         {
-            niji::render(p, cursor(*this, is_ended()));
+            niji::render(p, sink(*this, is_ended()));
         }
 
         // niji::path always starts with move_to.
@@ -271,7 +271,7 @@ namespace niji
         template<class Path, requires_valid<Path> = true>
         auto add(Path const& p)
         {
-            niji::render(p, cursor(*this, true));
+            niji::render(p, sink(*this, true));
         }
 
         template<class Point, class A>

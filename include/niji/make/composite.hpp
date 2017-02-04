@@ -1,11 +1,11 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef NIJI_COMPOSE_HPP_INCLUDED
-#define NIJI_COMPOSE_HPP_INCLUDED
+#ifndef NIJI_MAKE_COMPOSITE_HPP_INCLUDED
+#define NIJI_MAKE_COMPOSITE_HPP_INCLUDED
 
 #include <tuple>
 #include <type_traits>
@@ -15,14 +15,14 @@
 namespace niji
 {
     template<class... Paths>
-    struct composite
+    struct composite_path
     {
         using point_type =
             common_point_t<path_point_t<std::decay_t<Paths>>...>;
 
         using unpack_sequence = std::make_index_sequence<sizeof...(Paths)>;
 
-        composite(Paths&&... paths)
+        composite_path(Paths&&... paths)
           : paths(std::forward<Paths>(paths)...)
         {}
 
@@ -56,7 +56,7 @@ namespace niji
     };
     
     template<class... Paths>
-    inline composite<Paths...> compose(Paths&&... paths)
+    inline composite_path<Paths...> make_composite(Paths&&... paths)
     {
         return {std::forward<Paths>(paths)...};
     }

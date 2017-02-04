@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -45,9 +45,9 @@ namespace niji
             ::nvgBezierTo(context, pt1.x, pt1.y, pt2.x, pt2.y, pt3.x, pt3.y);
         }
         
-        void operator()(end_line_t) {}
+        void operator()(end_open_t) {}
 
-        void operator()(end_poly_t)
+        void operator()(end_closed_t)
         {
             ::nvgClosePath(context);
         }
@@ -88,9 +88,9 @@ namespace niji
             ::nvgBezierTo(context, pt1.x, pt1.y, pt2.x, pt2.y, pt3.x, pt3.y);
         }
         
-        void operator()(end_line_t tag) { _winding(tag); }
+        void operator()(end_open_t tag) { _winding(tag); }
 
-        void operator()(end_poly_t tag)
+        void operator()(end_closed_t tag)
         {
             _winding(tag);
             ::nvgClosePath(context);

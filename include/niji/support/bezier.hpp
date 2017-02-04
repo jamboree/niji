@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,7 +11,6 @@
 #include <cmath>
 #include <algorithm>
 #include <boost/assert.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
 #include <niji/support/traits.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
@@ -36,6 +35,7 @@ namespace niji { namespace detail
     T* find_unit_quad_roots(T a, T b, T c, T roots[2])
     {
         using std::sqrt;
+        using std::isnan;
         using std::swap;
     
         if (a == 0)
@@ -44,7 +44,7 @@ namespace niji { namespace detail
         T* r = roots;
 
         T root = b * b - 4 * a * c;
-        if (root < 0 || boost::math::isnan(root)) // complex roots
+        if (root < 0 || isnan(root)) // complex roots
             return roots;
 
         root = sqrt(root);
@@ -750,7 +750,7 @@ namespace niji { namespace bezier
     }
     
     template<class T>
-    int chop_cubic_at_max_curvature(point<T> const in[4], point<T> out[13], T tValues[3])
+    std::ptrdiff_t chop_cubic_at_max_curvature(point<T> const in[4], point<T> out[13], T tValues[3])
     {
         auto it = detail::find_cubic_max_curvature(in, tValues);
         if (it == tValues)

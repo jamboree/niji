@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -66,7 +66,7 @@ namespace niji
             for ( ; it != end; it += 3)
                 sink(cubic_to, *it, it[1], it[2]);
 #   endif
-            sink(end_line);
+            sink(end_open);
         }
     };
 }

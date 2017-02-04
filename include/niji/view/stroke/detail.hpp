@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -24,12 +24,17 @@ namespace niji { namespace detail
         void operator()(Ts&&...) const {}
     };
     
+    // This is used for both stroke & offset. If Capper == non_capper, it's for
+    // offset and we don't need to deal with inner path.
     template<class T, class Joiner, class Capper>
     struct stroker
     {
         using point_t = point<T>;
         using vector_t = vector<T>;
         using path_t = path<point_t>;
+
+        static constexpr bool do_inner =
+            !std::is_same<Capper, non_capper>::value;
 
         Joiner const& _join;
         Capper const& _cap;
@@ -93,7 +98,7 @@ namespace niji { namespace detail
                         _outer.join(tmp[2] + normalBC);
                         _outer.join(tmp[4] + normalBC);
                         
-                        if (!std::is_same<Capper, non_capper>::value)
+                        if (do_inner)
                         {
                             _inner.join(tmp[2] - normalAB);
                             _inner.join(tmp[2] - normalBC);
@@ -151,11 +156,11 @@ namespace niji { namespace detail
             case 0:
                 return;
             }
-            // _cap the end
+            // cap the end
             _cap(_outer, _prev_pt, _prev_normal, curr_is_line);
             _outer.reverse_splice(_inner);
 
-            // _cap the start
+            // cap the start
             _cap(_outer, _first_pt, -_first_normal, _prev_is_line);
             _outer.close();
 
@@ -179,7 +184,7 @@ namespace niji { namespace detail
               , std::min(_pre_magnitude, _first_magnitude)
             );
             _outer.close();
-            if (!std::is_same<Capper, non_capper>::value)
+            if (do_inner)
             {
                 _inner.close();
                 _outer.reverse_splice(_inner);
@@ -196,12 +201,14 @@ namespace niji { namespace detail
             normal = normal * _r / sqrt(magnitude);
 
             if (_seg_count > 0) // we have a previous segment
+            {
                 _join
                 (
                     _outer, _inner, _prev_pt, _prev_normal, normal
-                  , _r, _prev_is_line, curr_is_line
-                  , std::min(_pre_magnitude, magnitude)
+                    , _r, _prev_is_line, curr_is_line
+                    , std::min(_pre_magnitude, magnitude)
                 );
+            }
             else
             {
                 _first_normal = normal;
@@ -212,7 +219,7 @@ namespace niji { namespace detail
 #endif
                 {
                     _outer.join(_prev_pt + normal);
-                    if (!std::is_same<Capper, non_capper>::value)
+                    if (do_inner)
                         _inner.join(_prev_pt - normal);
                 }
             }
@@ -231,7 +238,7 @@ namespace niji { namespace detail
         {
 #ifndef JAMBOREE
             _outer.join(pt + normal);
-            if (!std::is_same<Capper, non_capper>::value)
+            if (do_inner)
                 _inner.join(pt - normal);
 #endif
         }
@@ -264,7 +271,7 @@ namespace niji { namespace detail
                 T rs = _r * _r;
                 normalB = normalB * _r / sqrt((dot + rs) * ns / (2 * rs));
                 _outer.unsafe_quad_to(pts[1] + normalB, pts[2] + normalBC);
-                if (!std::is_same<Capper, non_capper>::value)
+                if (do_inner)
                     _inner.unsafe_quad_to(pts[1] - normalB, pts[2] - normalBC);
             }
         }
@@ -334,7 +341,7 @@ namespace niji { namespace detail
                 normalC = normalC * _r / sqrt((dot + rs) * ns / rs2);
 
                 _outer.unsafe_cubic_to(pts[1] + normalB, pts[2] + normalC, pts[3] + normalCD);
-                if (!std::is_same<Capper, non_capper>::value)
+                if (do_inner)
                     _inner.unsafe_cubic_to(pts[1] - normalB, pts[2] - normalC, pts[3] - normalCD);
             }
         }

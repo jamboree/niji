@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -61,12 +61,12 @@ namespace niji
             });
         }
         
-        void operator()(end_line_t)
+        void operator()(end_open_t)
         {
             geometry_sink->EndFigure(::D2D1_FIGURE_END_OPEN);
         }
         
-        void operator()(end_poly_t)
+        void operator()(end_closed_t)
         {
             geometry_sink->EndFigure(::D2D1_FIGURE_END_CLOSED);
         }

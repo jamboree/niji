@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2016 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -50,12 +50,12 @@ namespace niji
                 _dasher.cubic_to(pt1, pt2, pt3, _sink);
             }
     
-            void operator()(end_poly_t)
+            void operator()(end_closed_t)
             {
                 _dasher.close(_sink);
             }
     
-            void operator()(end_line_t)
+            void operator()(end_open_t)
             {
                 _dasher.cut(_sink);
             }

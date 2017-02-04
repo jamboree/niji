@@ -1,13 +1,13 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
 
 #include <fstream>
-#include <niji/lazy.hpp>
-#include <niji/compose.hpp>
+#include <niji/make/lazy.hpp>
+#include <niji/make/composite.hpp>
 #include <niji/support/point.hpp>
 #include <niji/graphic/ellipse.hpp>
 #include <niji/view/inverse.hpp>
@@ -18,9 +18,9 @@ auto donut(niji::point<T> const& pt, T o, T i)
 {
     using namespace niji;
 
-    return lazy([=]
+    return make_lazy([=]
     {
-        return compose
+        return make_composite
         (
             ellipse<T>(pt, o)
           , ellipse<T>(pt, i) | views::inverse

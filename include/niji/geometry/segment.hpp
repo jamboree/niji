@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -33,7 +33,7 @@ namespace niji
             coord_t y2 = get<1, 1>(segment);
             sink(move_to, make<point_t>(x1, y1));
             sink(line_to, make<point_t>(x2, y2));
-            sink(end_line);
+            sink(end_open);
         }
     };
     
@@ -55,7 +55,7 @@ namespace niji
             coord_t y2 = get<1, 1>(segment);
             sink(move_to, make<point_t>(x2, y2));
             sink(line_to, make<point_t>(x1, y1));
-            sink(end_line);
+            sink(end_open);
         }
     };
 }

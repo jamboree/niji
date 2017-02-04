@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -49,9 +49,9 @@ namespace niji
             path.cubicTo(get<0>(pt1), get<1>(pt1), get<0>(pt2), get<1>(pt2), get<0>(pt3), get<1>(pt3));
         }
         
-        void operator()(end_line_t) {}
+        void operator()(end_open_t) {}
         
-        void operator()(end_poly_t)
+        void operator()(end_closed_t)
         {
             path.close();
         }

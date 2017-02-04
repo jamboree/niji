@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -80,14 +80,14 @@ namespace niji
             out << std::endl;
         }
  
-        void operator()(end_line_t)
+        void operator()(end_open_t)
         {
-            out << "end_line\n";
+            out << "end_open\n";
         }
 
-        void operator()(end_poly_t)
+        void operator()(end_closed_t)
         {
-            out << "end_poly\n";
+            out << "end_closed\n";
         }
     };
 }

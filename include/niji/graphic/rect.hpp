@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -112,7 +112,7 @@ namespace niji { namespace rect_policy
                 sink(cubic_to, point<T>{at_c<1>(x) + at_c<1 % n>(sx), y2}, point<T>{x1, at_c<1>(y) - at_c<1 % n>(sy)}, point<T>{x1, at_c<1>(y)});
             }
 #   endif
-            sink(end_poly);
+            sink(end_closed);
         }
     };
     
@@ -156,7 +156,7 @@ namespace niji { namespace rect_policy
                 sink(line_to, point<T>{at_c<1>(x), y2});
                 sink(line_to, point<T>{x1, at_c<1>(y)});
             }
-            sink(end_poly);
+            sink(end_closed);
         }
     };
 }}
