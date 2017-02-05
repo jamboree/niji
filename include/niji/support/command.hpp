@@ -9,6 +9,7 @@
 
 #include <type_traits>
 #include <niji/support/identifier.hpp>
+#include <niji/support/deprecate.hpp>
 
 namespace niji
 {
@@ -17,8 +18,8 @@ namespace niji
     {
         closed,
         open,
-        poly [[deprecated("used 'closed' instead")]] = closed,
-        line [[deprecated("used 'open' instead")]] = open
+        poly NIJI_DEPRECATE_BY(closed) = closed,
+        line NIJI_DEPRECATE_BY(open) = open
     };
     
     template<end_tag which>
@@ -27,8 +28,8 @@ namespace niji
     using end_closed_t = end_tag_t<end_tag::closed>;
     using end_open_t = end_tag_t<end_tag::open>;
 
-    using end_poly_t [[deprecated("used 'end_closed_t' instead")]] = end_closed_t;
-    using end_line_t [[deprecated("used 'end_open_t' instead")]] = end_open_t;
+    using end_poly_t NIJI_DEPRECATE_BY(end_closed_t) = end_closed_t;
+    using end_line_t NIJI_DEPRECATE_BY(end_open_t) = end_open_t;
 
     struct move_to_t {};
     struct line_to_t {};
@@ -45,8 +46,8 @@ namespace niji { namespace command
 {
     NIJI_IDENTIFIER(end_closed_t, end_closed);
     NIJI_IDENTIFIER(end_open_t, end_open);
-    NIJI_IDENTIFIER(end_closed_t, end_poly [[deprecated("used 'end_closed' instead")]]);
-    NIJI_IDENTIFIER(end_open_t, end_line [[deprecated("used 'end_open' instead")]]);
+    NIJI_IDENTIFIER(end_closed_t, end_poly NIJI_DEPRECATE_BY(end_closed));
+    NIJI_IDENTIFIER(end_open_t, end_line NIJI_DEPRECATE_BY(end_open));
     NIJI_IDENTIFIER(move_to_t, move_to);
     NIJI_IDENTIFIER(line_to_t, line_to);
     NIJI_IDENTIFIER(quad_to_t, quad_to);

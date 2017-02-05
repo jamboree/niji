@@ -99,11 +99,11 @@ namespace niji { namespace detail
                 continue;
             switch (i.tag)
             {
-            case end_tag::poly:
+            case end_tag::closed:
                 sink(end_closed);
                 heading = true;
                 break;
-            case end_tag::line:
+            case end_tag::open:
                 sink(end_open);
                 heading = true;
                 break;

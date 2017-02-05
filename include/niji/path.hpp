@@ -199,7 +199,7 @@ namespace niji
             namespace rng = ::boost::adaptors;
             using namespace command;
 
-            char tag = end_tag::line;
+            char tag = end_tag::open;
             bool needs_ending = detail::path_render_impl
             (
                 sink
@@ -209,7 +209,7 @@ namespace niji
             );
             if (needs_ending)
             {
-                if (tag == end_tag::poly)
+                if (tag == end_tag::closed)
                     sink(end_closed);
                 else
                     sink(end_open);
@@ -229,13 +229,25 @@ namespace niji
             nodes_base::insert(nodes_base::end(), begin, end);
         }
 
+        void join_quad(Node const& pt1, Node const& pt2, Node const& pt3)
+        {
+            join(pt1);
+            unsafe_quad_to(pt2, pt3);
+        }
+
+        void join_cubic(Node const& pt1, Node const& pt2, Node const& pt3, Node const& pt4)
+        {
+            join(pt1);
+            unsafe_cubic_to(pt2, pt3, pt4);
+        }
+
         template<class Nodes>
-        void join_range(Nodes const& pts)
+        void join_sequence(Nodes const& pts)
         {
             join(pts.begin(), pts.end());
         }
 
-        void join_range(std::initializer_list<Node> pts)
+        void join_sequence(std::initializer_list<Node> pts)
         {
             join(pts.begin(), pts.end());
         }
@@ -255,20 +267,8 @@ namespace niji
             cut();
             splice(p);
         }
-        
-        void join_quad(Node const& pt1, Node const& pt2, Node const& pt3)
-        {
-            join(pt1);
-            unsafe_quad_to(pt2, pt3);
-        }
-        
-        void join_cubic(Node const& pt1, Node const& pt2, Node const& pt3, Node const& pt4)
-        {
-            join(pt1);
-            unsafe_cubic_to(pt2, pt3, pt4);
-        }
 
-        template<class Path, requires_valid<Path> = true>
+        template<class Path>
         auto add(Path const& p)
         {
             niji::render(p, sink(*this, true));
@@ -300,7 +300,7 @@ namespace niji
             if (rit != rend)
             {
                 _index_tags.reserve(_index_tags.size() + (rit - rend));
-                char tag = end_tag::line | 4;
+                char tag = end_tag::open | 4;
                 auto remap = index_tag_t::remap(p.size(), tag);
                 auto i = remap(*--rit);
                 if (i.index)
@@ -334,21 +334,21 @@ namespace niji
 
         void close()
         {
-            if (!nodes_base::empty())
-                delimit(end_tag::poly);
+            delimit(end_tag::closed);
         }
 
         void cut()
         {
-            if (!nodes_base::empty())
-                delimit(end_tag::line);
+            delimit(end_tag::open);
         }
 
         void delimit(end_tag tag)
         {
-            auto index = nodes_base::size();
-            if (_index_tags.empty() || _index_tags.back().index != index)
-                _index_tags.emplace_back(index, tag);
+            if (auto index = nodes_base::size())
+            {
+                if (_index_tags.empty() || _index_tags.back().index != index)
+                    _index_tags.emplace_back(index, tag);
+            }
         }
         
         void clear() noexcept
