@@ -15,35 +15,9 @@
 namespace niji
 {
     template<class T>
-    class winding_sink
+    struct winding_sink
     {
-        point<T> _pts[4];
-        bool _has_line;
-        bool _has_turn;
-        bool _first_is_min;
-
-        void next(point<T> const& pt)
-        {
-            if (pt.y < _pts[1].y)
-            {
-                _pts[0] = _pts[2 + _has_turn];
-                _pts[1] = pt;
-                _has_turn = false;
-                _first_is_min = false;
-            }
-            else if (_has_turn)
-                _pts[3] = pt;
-            else if (pt != _pts[1])
-            {
-                _pts[2] = pt;
-                _has_turn = _has_line;
-            }
-            _has_line = true;
-        }
-
-    public:
-
-        bool is_ccw;
+        bool is_ccw = false;
 
         void operator()(move_to_t, point<T> const& pt)
         {
@@ -84,6 +58,31 @@ namespace niji
                 is_ccw = vectors::is_ccw(_pts[1] - p0, _pts[2] - _pts[1]);
             }
         }
+
+    private:
+        void next(point<T> const& pt)
+        {
+            if (pt.y < _pts[1].y)
+            {
+                _pts[0] = _pts[2 + _has_turn];
+                _pts[1] = pt;
+                _has_turn = false;
+                _first_is_min = false;
+            }
+            else if (_has_turn)
+                _pts[3] = pt;
+            else if (pt != _pts[1])
+            {
+                _pts[2] = pt;
+                _has_turn = _has_line;
+            }
+            _has_line = true;
+        }
+
+        bool _has_line;
+        bool _has_turn;
+        bool _first_is_min;
+        point<T> _pts[4];
     };
 
     template<class Path>

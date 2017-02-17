@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -25,9 +25,9 @@ namespace niji { namespace detail
         point<T> min, max;
 
         bounds_sink()
-            : min(boost::numeric::bounds<T>::highest(), boost::numeric::bounds<T>::highest())
-            , max(boost::numeric::bounds<T>::lowest(), boost::numeric::bounds<T>::lowest())
-            , _moving(true)
+          : min(boost::numeric::bounds<T>::highest(), boost::numeric::bounds<T>::highest())
+          , max(boost::numeric::bounds<T>::lowest(), boost::numeric::bounds<T>::lowest())
+          , _moving(true)
         {}
 
         void operator()(move_to_t, point<T> const& pt)
@@ -57,7 +57,6 @@ namespace niji { namespace detail
         void operator()(end_tag) {}
         
     private:
-
         void line_start()
         {
             if (_moving)
@@ -90,44 +89,44 @@ namespace niji { namespace detail
             adjust(d);
         }
         
-        template<int n>
+        template<int N>
         void adjust_quad_coord(point<T> const& a, point<T> const& b, point<T> const& c)
         {
             using boost::geometry::get;
             using boost::geometry::set;
 
-            T aa = get<n>(a), bb = get<n>(b), cc = get<n>(c);
+            T aa = get<N>(a), bb = get<N>(b), cc = get<N>(c);
             if (aa == bb || cc == bb)
             {
-                adjust_coord<n>(cc);
+                adjust_coord<N>(cc);
                 return;
             }
             if (aa > bb)
             {
-                if (cc < bb && cc < get<n>(min))
+                if (cc < bb && cc < get<N>(min))
                 {
-                    set<n>(min, cc);
+                    set<N>(min, cc);
                     return;
                 }
             } 
-            else if (cc > bb && cc > get<n>(max))
+            else if (cc > bb && cc > get<N>(max))
             {
-                set<n>(max, cc);
+                set<N>(max, cc);
                 return;
             }
             T t;
             auto end = find_quad_extrema(aa, bb, cc, &t);
             if (&t != end)
-                adjust_coord<n>(bezier::quad_eval(aa, bb, cc, t));
+                adjust_coord<N>(bezier::quad_eval(aa, bb, cc, t));
         }
         
-        template<int n>
+        template<int N>
         void adjust_cubic_coord(point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
         {
             using boost::geometry::get;
             using boost::geometry::set;
 
-            T aa = get<n>(a), bb = get<n>(b), cc = get<n>(c), dd = get<n>(d);
+            T aa = get<N>(a), bb = get<N>(b), cc = get<N>(c), dd = get<N>(d);
             T lo = aa, hi = dd;
             if (hi < lo)
                 std::swap(hi, lo);
@@ -137,7 +136,7 @@ namespace niji { namespace detail
             T extrama[2];
             auto end = find_cubic_extrema(aa, bb, cc, dd, extrama);
             for (auto it = extrama; it != end; ++it)
-                adjust_coord<n>(bezier::cubic_eval(aa, bb, cc, dd, *it));
+                adjust_coord<N>(bezier::cubic_eval(aa, bb, cc, dd, *it));
         }
         
         void adjust(point<T> const& pt)
@@ -147,33 +146,33 @@ namespace niji { namespace detail
             _prev = pt;
         }
         
-        template<int n>
+        template<int N>
         void adjust_coord(T val)
         {
             using boost::geometry::get;
             using boost::geometry::set;
             
-            if (val < get<n>(min))
-                set<n>(min, val);
-            else if (val > get<n>(max))
-                set<n>(max, val);
+            if (val < get<N>(min))
+                set<N>(min, val);
+            else if (val > get<N>(max))
+                set<N>(max, val);
         }
         
-        // for init that max < min
-        template<int n>
+        // For init that max < min.
+        template<int N>
         void adjust_coord2(T val)
         {
             using boost::geometry::get;
             using boost::geometry::set;
             
-            if (val < get<n>(min))
-                set<n>(min, val);
-            if (val > get<n>(max))
-                set<n>(max, val);
+            if (val < get<N>(min))
+                set<N>(min, val);
+            if (val > get<N>(max))
+                set<N>(max, val);
         }
         
-        bool _moving;
         point<T> _prev;
+        bool _moving;
     };
 }}
 

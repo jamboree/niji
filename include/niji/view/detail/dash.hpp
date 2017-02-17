@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2016 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -115,30 +115,24 @@ namespace niji { namespace detail
         {
             if (_offset)
             {
-                if (_gap)
+                if (_offset >= len)
                 {
-                    if (_offset >= len)
-                    {
-                        _offset -= len;
-                        return false;
-                    }
-                    act.post(_offset, len);
+                    _offset -= len;
+                    if (!_gap)
+                        act.join_end(true);
+                    return false;
                 }
+                if (_gap)
+                    act.skip(_offset, len);
                 else
                 {
-                    if (_offset >= len)
-                    {
-                        _offset -= len;
-                        act.pad_end(true);
-                        return false;
-                    }
                     act.join(_offset, len);
                     act.cut();
                 }
                 _offset = 0;
             }
             else
-                act.post();
+                act.stay();
             return true;
         }
         
@@ -155,7 +149,7 @@ namespace niji { namespace detail
                     {
                         _offset = sum - len;
                         _gap = false;
-                        act.pad_end(false);
+                        act.join_end(false);
                         if (++_it == _end)
                             _it = _begin;
                         else
@@ -194,7 +188,7 @@ namespace niji { namespace detail
             vector_t const& _v;
             boost::optional<point_t> join_pt;
             
-            void pad_end(bool)
+            void join_end(bool)
             {
                 _path.join(_pt);
             }
@@ -206,12 +200,12 @@ namespace niji { namespace detail
 
             void cut() {}
             
-            void post(T sum, T len)
+            void skip(T sum, T len)
             {
                 join_pt = _prev + _v * sum / len;
             }
             
-            void post()
+            void stay()
             {
                 join_pt = _prev;
             }
@@ -250,7 +244,7 @@ namespace niji { namespace detail
             point_t _pts[3];
             point_t _chops[5];
 
-            void pad_end(bool has_prev)
+            void join_end(bool has_prev)
             {
                 if (!has_prev)
                     _path.join(_pts[0]);
@@ -272,12 +266,12 @@ namespace niji { namespace detail
                 _path.join_quad(_chops[0], _chops[1], _chops[2]);
             }
 
-            void post(T& sum, T& len)
+            void skip(T& sum, T& len)
             {
                 join(sum, len);
             }
             
-            void post() {}
+            void stay() {}
         };
         
         struct cubic_actor
@@ -286,7 +280,7 @@ namespace niji { namespace detail
             point_t _pts[4];
             point_t _chops[7];
 
-            void pad_end(bool has_prev)
+            void join_end(bool has_prev)
             {
                 if (!has_prev)
                     _path.join(_pts[0]);
@@ -308,12 +302,12 @@ namespace niji { namespace detail
                 _path.join_cubic(_chops[0], _chops[1], _chops[2], _chops[3]);
             }
 
-            void post(T& sum, T& len)
+            void skip(T& sum, T& len)
             {
                 join(sum, len);
             }
             
-            void post() {}
+            void stay() {}
         };
 
         template<class Sink>

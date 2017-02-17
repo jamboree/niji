@@ -52,7 +52,6 @@ namespace niji { namespace detail
         }
         
     private:
-        
         point<T> _prev, _first;
     };
 }}
