@@ -88,11 +88,6 @@ namespace niji
             render(path, sink);
         }
     };
-
-    template<class Path, class T, class Pattern, class U>
-    struct path_cache<path_adaptor<Path, dash_view<T, Pattern, U>>>
-      : default_path_cache<path_adaptor<Path, dash_view<T, Pattern, U>>>
-    {};
 }
 
 namespace niji { namespace views

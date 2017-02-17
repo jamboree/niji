@@ -123,7 +123,6 @@ namespace niji { namespace detail
                         return false;
                     }
                     act.post(_offset, len);
-                    _offset = 0;
                 }
                 else
                 {
@@ -135,8 +134,8 @@ namespace niji { namespace detail
                     }
                     act.join(_offset, len);
                     act.cut();
-                    _offset = 0;
                 }
+                _offset = 0;
             }
             else
                 act.post();

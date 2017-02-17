@@ -86,11 +86,6 @@ namespace niji
                 niji::render(path, adaptor_t{sink, {r, joiner, {}}, true});
         }
     };
-
-    template<class Path, class T, class Joiner>
-    struct path_cache<path_adaptor<Path, offset_view<T, Joiner>>>
-      : default_path_cache<path_adaptor<Path, offset_view<T, Joiner>>>
-    {};
 }
 
 namespace niji { namespace views

@@ -57,30 +57,6 @@ namespace niji
     
     template<class Path>
     using path_coordinate_t = typename path_coordinate<Path>::type;
-
-    template<class Path>
-    struct path_cache
-    {
-        Path const& operator()(Path const& path)
-        {
-            return path;
-        }
-    };
-
-    template<class Path>
-    struct default_path_cache
-    {
-        using cache_t = niji::path<path_point_t<Path>>;
-
-        cache_t const& operator()(Path const& path)
-        {
-            return _cache = path;
-        }
-        
-    private:
-        
-        cache_t _cache;
-    };
 }
 
 #endif

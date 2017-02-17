@@ -46,10 +46,9 @@ namespace niji
         static void render_impl(Path const& path, Sink& sink, std::size_t n, T dx, T dy, View view)
         {
             using coord_t = path_coordinate_t<Path>;
-            
-            path_cache<Path> cache;
+
             views::translate<coord_t> translate(0, 0);
-            auto transformed = cache(path) | view | translate;
+            auto transformed = path | view | translate;
 
             for (std::size_t i = 0; i != n; ++i)
             {
@@ -91,10 +90,9 @@ namespace niji
         static void render_impl(Path const& path, Sink& sink, std::size_t nx, std::size_t ny, T dx, T dy, View view)
         {
             using coord_t = path_coordinate_t<Path>;
-            
-            path_cache<Path> cache;
+
             views::translate<coord_t> translate(0, 0);
-            auto transformed = cache(path) | view | translate;
+            auto transformed = path | view | translate;
 
             for (std::size_t i = 0; i != ny; ++i)
             {

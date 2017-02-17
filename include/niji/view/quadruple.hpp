@@ -68,12 +68,10 @@ namespace niji
         {
             using point_t = path_point_t<Path>;
 
-            path_cache<Path> cache;
-            auto const& cached = cache(path);
-            niji::render(cached, sink);
-            niji::render(cached | views::transform(detail::rot_quad<point_t, 1>()), sink);
-            niji::render(cached | views::transform(detail::rot_quad<point_t, 2>()), sink);
-            niji::render(cached | views::transform(detail::rot_quad<point_t, 3>()), sink);
+            niji::render(path, sink);
+            niji::render(path | views::transform(detail::rot_quad<point_t, 1>()), sink);
+            niji::render(path | views::transform(detail::rot_quad<point_t, 2>()), sink);
+            niji::render(path | views::transform(detail::rot_quad<point_t, 3>()), sink);
         }
     };
 }

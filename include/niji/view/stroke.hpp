@@ -90,11 +90,6 @@ namespace niji
                 niji::render(path, adaptor_t{sink, {r, joiner, capper}, true});
         }
     };
-
-    template<class Path, class T, class Joiner, class Capper>
-    struct path_cache<path_adaptor<Path, stroke_view<T, Joiner, Capper>>>
-      : default_path_cache<path_adaptor<Path, stroke_view<T, Joiner, Capper>>>
-    {};
 }
 
 namespace niji { namespace views
