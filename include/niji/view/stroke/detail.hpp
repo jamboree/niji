@@ -13,9 +13,6 @@
 #include <niji/support/vector.hpp>
 #include <niji/support/bezier.hpp>
 
-#define NIJI_MAX_QUAD_SUBDIVIDE 5
-#define NIJI_MAX_CUBIC_SUBDIVIDE 7
-
 namespace niji { namespace detail
 {
     struct non_capper
@@ -364,8 +361,5 @@ namespace niji { namespace detail
         }
     };
 }}
-
-#undef NIJI_MAX_QUAD_SUBDIVIDE
-#undef NIJI_MAX_CUBIC_SUBDIVIDE
 
 #endif

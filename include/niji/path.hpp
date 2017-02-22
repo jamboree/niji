@@ -241,17 +241,12 @@ namespace niji
             unsafe_cubic_to(pt2, pt3, pt4);
         }
 
-        template<class Nodes>
+        template<class Nodes = std::initializer_list<Node>>
         void join_sequence(Nodes const& pts)
         {
             join(pts.begin(), pts.end());
         }
 
-        void join_sequence(std::initializer_list<Node> pts)
-        {
-            join(pts.begin(), pts.end());
-        }
-        
         // This is useful for paths that don't start with move_to, in which
         // case results in continuous path.
         template<class Path>

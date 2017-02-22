@@ -16,9 +16,6 @@
 #include <niji/support/vector.hpp>
 #include <niji/support/bezier.hpp>
 
-#define NIJI_MAX_QUAD_SUBDIVIDE 5
-#define NIJI_MAX_CUBIC_SUBDIVIDE 7
-
 namespace niji { namespace detail
 {
     template<class T, class U, class Iterator>
@@ -210,34 +207,7 @@ namespace niji { namespace detail
                 join_pt = _prev;
             }
         };
-        
-        template<class F>
-        static void curve_bisect(unsigned subdivide, T& sum, T& len, F&& f)
-        {
-            T L = 0, R = len, left = 0, right = 1, t = sum / R, d;
-            for ( ; ; --subdivide)
-            {
-                d = f(t);
-                if (d < sum)
-                {
-                    if (is_nearly_zero(sum - d) || !subdivide)
-                        break;
-                    left = t;
-                    L = d;
-                }
-                else
-                {
-                    if (is_nearly_zero(d - sum) || !subdivide)
-                        break;
-                    right = t;
-                    R = d;
-                }
-                t = left + (right - left) * (sum - L) / (R - L);
-            };
-            len -= d;
-            sum = 0;
-        }
-        
+
         struct quad_actor
         {
             path<point_t>& _path;
@@ -253,7 +223,7 @@ namespace niji { namespace detail
             
             void join(T& sum, T& len)
             {
-                curve_bisect(NIJI_MAX_QUAD_SUBDIVIDE, sum, len, [this](T t)
+                bezier::curve_bisect(NIJI_MAX_QUAD_SUBDIVIDE, sum, len, [this](T t)
                 {
                     bezier::chop_quad_at(_pts, _chops, t);
                     return bezier::quad_length(_chops[0], _chops[1], _chops[2]);
@@ -289,7 +259,7 @@ namespace niji { namespace detail
             
             void join(T& sum, T& len)
             {
-                curve_bisect(NIJI_MAX_CUBIC_SUBDIVIDE, sum, len, [this](T t)
+                bezier::curve_bisect(NIJI_MAX_CUBIC_SUBDIVIDE, sum, len, [this](T t)
                 {
                     bezier::chop_cubic_at(_pts, _chops, t);
                     return bezier::cubic_length(_chops[0], _chops[1], _chops[2], _chops[3]);
@@ -348,8 +318,5 @@ namespace niji { namespace detail
         bool _skip, _gap;
     };
 }}
-
-#undef NIJI_MAX_QUAD_SUBDIVIDE
-#undef NIJI_MAX_CUBIC_SUBDIVIDE
 
 #endif

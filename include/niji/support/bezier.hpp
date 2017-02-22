@@ -26,6 +26,9 @@
 // Some are from Pomax's excellent article about bezier, see
 // http://pomax.github.io/bezierinfo/.
 
+#define NIJI_MAX_QUAD_SUBDIVIDE 5
+#define NIJI_MAX_CUBIC_SUBDIVIDE 7
+
 namespace niji { namespace detail
 {
     // Q = -1/2 (B + sign(B) sqrt[B*B - 4*A*C])
@@ -885,6 +888,34 @@ namespace niji { namespace bezier
         for ( ; it != end; ++it)
             *it = affine(*it);
         return it;
+    }
+
+    template<class T, class F>
+    T curve_bisect(unsigned subdivide, T& sum, T& len, F&& f)
+    {
+        T L = 0, R = len, left = 0, right = 1, t = sum / R, d;
+        for (; ; --subdivide)
+        {
+            d = f(t);
+            if (d < sum)
+            {
+                if (is_nearly_zero(sum - d) || !subdivide)
+                    break;
+                left = t;
+                L = d;
+            }
+            else
+            {
+                if (is_nearly_zero(d - sum) || !subdivide)
+                    break;
+                right = t;
+                R = d;
+            }
+            t = left + (right - left) * (sum - L) / (R - L);
+        }
+        len -= d;
+        sum = 0;
+        return t;
     }
 }}
 
