@@ -4,11 +4,11 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef NIJI_GRAPHIC_RADIAL_HPP_INCLUDED
-#define NIJI_GRAPHIC_RADIAL_HPP_INCLUDED
+#ifndef NIJI_GRAPHIC_ANGULAR_HPP_INCLUDED
+#define NIJI_GRAPHIC_ANGULAR_HPP_INCLUDED
 
-#include <type_traits>
 #include <array>
+#include <type_traits>
 #include <niji/support/command.hpp>
 #include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
@@ -17,39 +17,38 @@
 namespace niji
 {
     template<class T, std::size_t N = 1>
-    struct radial
+    struct angular
     {
         using point_type = point<T>;
 
-        using store_t = std::conditional_t<(N > 1), std::array<T, N>, T>;
-        using param_t = std::conditional_t<(N > 1), std::array<T, N> const&, T>;
-        using view_t = std::conditional_t<(N > 1), std::array<T, N> const&, std::array<T, N>>;
+        using store_t = std::array<T, N>;
+        using param_t = std::conditional_t<(N > 1), store_t const&, T>;
 
         point_type origin;
         store_t r;
         store_t theta; // To turn side up, use radian = PI / n
-        std::size_t n;
+        unsigned n;
 
-        radial(std::size_t n, point_type const& pt, param_t r, param_t theta = {})
-          : origin(pt), r(r), theta(theta), n(n)
+        angular(std::size_t n, point_type const& pt, param_t r, param_t theta = {})
+          : origin(pt), r{r}, theta{theta}, n(n)
         {}
 
         template<class Sink>
         void render(Sink& sink) const
         {
-            render_impl(sink, constants::two_pi<T>(), {r}, {theta});
+            render_impl(sink, constants::two_pi<T>());
         }
         
         template<class Sink>
         void inverse_render(Sink& sink) const
         {
-            render_impl(sink, -constants::two_pi<T>(), {r}, {theta});
+            render_impl(sink, -constants::two_pi<T>());
         }
 
     private:
 
         template<class Sink>
-        void render_impl(Sink& sink, T da, view_t r, view_t theta) const
+        void render_impl(Sink& sink, T da) const
         {
             using namespace command;
             using std::sin;
@@ -84,7 +83,7 @@ namespace niji
                 }
             };
 
-            std::size_t m = n - 1, k = (m - 1) >> 2, i = 0;
+            unsigned m = n - 1, k = (m - 1) >> 2, i = 0;
             switch (m & 3u)
             {
                 do
