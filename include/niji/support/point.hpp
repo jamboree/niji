@@ -81,14 +81,6 @@ namespace niji
         }
 
         template<class U>
-        point<std::common_type_t<T, U>>
-        operator+(point<U> const& other) const
-        {
-            point<std::common_type_t<T, U>> ret(*this);
-            return ret += other;
-        }
-
-        template<class U>
         point& operator-=(point<U> const& other)
         {
             x -= other.x;
@@ -96,14 +88,6 @@ namespace niji
             return *this;
         }
 
-        template<class U>
-        point<std::common_type_t<T, U>>
-        operator-(point<U> const& other) const
-        {
-            point<std::common_type_t<T, U>> ret(*this);
-            return ret -= other;
-        }
-        
         template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
         point& operator*=(U const& val)
         {
@@ -119,23 +103,7 @@ namespace niji
             y *= other.y;
             return *this;
         }
-        
-        template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
-        point<std::common_type_t<T, U>>
-        operator*(U const& val) const
-        {
-            point<std::common_type_t<T, U>> ret(*this);
-            return ret *= val;
-        }
-        
-        template<class U>
-        point<std::common_type_t<T, U>>
-        operator*(point<U> const& other) const
-        {
-            point<std::common_type_t<T, U>> ret(*this);
-            return ret *= other;
-        }
-        
+
         template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
         point& operator/=(U const& val)
         {
@@ -151,30 +119,37 @@ namespace niji
             y /= other.y;
             return *this;
         }
-        
-        template<class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>
-        point<std::common_type_t<T, U>>
-        operator/(U const& val) const
-        {
-            point<std::common_type_t<T, U>> ret(*this);
-            return ret /= val;
-        }
-        
-        template<class U>
-        point<std::common_type_t<T, U>>
-        operator/(point<U> const& other) const
-        {
-            point<std::common_type_t<T, U>> ret(*this);
-            return ret /= other;
-        }
-        
+
         template<class Archive>
         void serialize(Archive& ar, unsigned version)
         {
             ar & x & y;
         }
     };
-    
+
+#define NIJI_DEFINE_POINT_OEPRATOR(op)                                          \
+    template<class T, class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>\
+    inline point<std::common_type_t<T, U>> operator op(point<T> const& pt, U const& val)\
+    {                                                                           \
+        return point<std::common_type_t<T, U>>(pt.x op val, pt.y op val);       \
+    }                                                                           \
+    template<class T, class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>\
+    inline point<std::common_type_t<T, U>> operator op(U const& val, point<T> const& pt)\
+    {                                                                           \
+        return point<std::common_type_t<T, U>>(pt.x op val, pt.y op val);       \
+    }                                                                           \
+    template<class T, class U>                                                  \
+    inline point<std::common_type_t<T, U>> operator op(point<T> const& lhs, point<U> const& rhs)\
+    {                                                                           \
+        return point<std::common_type_t<T, U>>(lhs.x op rhs.x, lhs.y op rhs.y); \
+    }                                                                           \
+/***/
+    NIJI_DEFINE_POINT_OEPRATOR(+)
+    NIJI_DEFINE_POINT_OEPRATOR(-)
+    NIJI_DEFINE_POINT_OEPRATOR(*)
+    NIJI_DEFINE_POINT_OEPRATOR(/)
+#undef NIJI_DEFINE_POINT_OEPRATOR
+
     using ipoint = point<int>;
     using fpoint = point<float>;
     using dpoint = point<double>;
