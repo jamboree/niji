@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2017 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -28,9 +28,9 @@ namespace niji
         }
         
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        auto inverse_render(Sink& sink) const -> decltype(view.inverse_render(path, sink))
         {
-            view.inverse_render(path, sink);
+            return view.inverse_render(path, sink);
         }
     };
 
@@ -39,26 +39,15 @@ namespace niji
     {
         template<class Path>
         using point_type = typename path_point<Path>::type;
-
-        template<class Path, class Sink>
-        void inverse_render(Path const& path, Sink& sink) const
-        {
-            using point_t = typename Derived::template point_type<Path>;
-            
-            niji::path<point_t> tmp;
-            typename niji::path<point_t>::cursor join(tmp, true);
-            Derived::render(path, join);
-            tmp.inverse_render(sink);
-        }
     };
 
     template<class LHS, class RHS>
-    struct composite_view : view<composite_view<LHS, RHS>>
+    struct chained_view : view<chained_view<LHS, RHS>>
     {
         LHS lhs;
         RHS rhs;
 
-        composite_view(LHS&& lhs, RHS&& rhs)
+        chained_view(LHS&& lhs, RHS&& rhs)
           : lhs(std::forward<LHS>(lhs)), rhs(std::forward<RHS>(rhs))
         {}
 
@@ -100,20 +89,6 @@ namespace niji
     operator|(Path&& path, view<Derived> const& d)
     {
         return {std::forward<Path>(path), static_cast<Derived const&>(d)};
-    }
-
-    template<class LHS, class RHS>
-    inline composite_view<LHS, RHS>
-    operator||(view<LHS>&& lhs, view<RHS>&& rhs)
-    {
-        return {static_cast<LHS&&>(lhs), static_cast<RHS&&>(rhs)};
-    }
-
-    template<class LHS, class RHS>
-    inline composite_view<LHS const&, RHS const&>
-    operator||(view<LHS> const& lhs, view<RHS> const& rhs)
-    {
-        return {static_cast<LHS const&>(lhs), static_cast<RHS const&>(rhs)};
     }
 }
 
