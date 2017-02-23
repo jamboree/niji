@@ -69,14 +69,11 @@ namespace niji { namespace detail
         {
             vector_t v(pt - _prev_pt);
             T len(vectors::norm(v));
-            T offset = _offset;
-            line_actor act{_path, pt, _prev_pt, v};
+            line_actor act{_path, {_prev_pt, pt}};
             if (pre_act(act, len))
             {
                 flush(sink);
-                if (act.join_pt)
-                    _path.join(act.join_pt.get());
-                post_act(act, offset, len);
+                post_act(act, len);
             }
             _prev_pt = pt;
         }
@@ -89,7 +86,7 @@ namespace niji { namespace detail
             if (pre_act(act, len))
             {
                 flush(sink);
-                post_act(act, 0, len);
+                post_act(act, len);
             }
             _prev_pt = pt2;
         }
@@ -102,7 +99,7 @@ namespace niji { namespace detail
             if (pre_act(act, len))
             {
                 flush(sink);
-                post_act(act, 0, len);
+                post_act(act, len);
             }
             _prev_pt = pt3;
         }
@@ -119,23 +116,18 @@ namespace niji { namespace detail
                         act.join_end(true);
                     return false;
                 }
-                if (_gap)
-                    act.skip(_offset, len);
-                else
-                {
-                    act.join(_offset, len);
+                act.join(_offset, len);
+                len -= _offset, _offset = 0;
+                if (!_gap)
                     act.cut();
-                }
-                _offset = 0;
             }
-            else
-                act.stay();
             return true;
         }
         
         template<class Actor>
-        void post_act(Actor& act, T sum, T len)
+        void post_act(Actor& act, T len)
         {
+            T sum = 0;
             switch (_skip)
             {
             default:
@@ -159,6 +151,7 @@ namespace niji { namespace detail
                         continue;
                     }
                     act.join(sum, len);
+                    len -= sum, sum = 0;
                     act.cut();
             case true:
                     sum += _weight * (*_it);
@@ -173,6 +166,7 @@ namespace niji { namespace detail
                     }
                     _path.cut();
                     act.join(sum, len);
+                    len -= sum, sum = 0;
                 }
             }
         }
@@ -180,31 +174,28 @@ namespace niji { namespace detail
         struct line_actor
         {
             path<point_t>& _path;
-            point_t const& _pt;
-            point_t const& _prev;
-            vector_t const& _v;
-            boost::optional<point_t> join_pt;
-            
-            void join_end(bool)
+            point_t _pts[2];
+            point_t _chops[3];
+
+            void join_end(bool has_prev)
             {
-                _path.join(_pt);
+                if (!has_prev)
+                    _path.join(_pts[0]);
+                _path.join(_pts[1]);
             }
 
             void join(T sum, T len)
             {
-                _path.join(_prev + _v * sum / len);
+                _chops[0] = _pts[0];
+                _chops[1] = points::interpolate(_pts[0], _pts[1], sum / len);
+                _chops[2] = _pts[1];
+                std::copy(_chops + 1, _chops + 3, _pts);
             }
 
-            void cut() {}
-            
-            void skip(T sum, T len)
+            void cut()
             {
-                join_pt = _prev + _v * sum / len;
-            }
-            
-            void stay()
-            {
-                join_pt = _prev;
+                _path.join(_chops[0]);
+                _path.join(_chops[1]);
             }
         };
 
@@ -221,7 +212,7 @@ namespace niji { namespace detail
                 _path.unsafe_quad_to(_pts[1], _pts[2]);
             }
             
-            void join(T& sum, T& len)
+            void join(T sum, T len)
             {
                 bezier::curve_bisect(NIJI_MAX_QUAD_SUBDIVIDE, sum, len, [this](T t)
                 {
@@ -235,13 +226,6 @@ namespace niji { namespace detail
             {
                 _path.join_quad(_chops[0], _chops[1], _chops[2]);
             }
-
-            void skip(T& sum, T& len)
-            {
-                join(sum, len);
-            }
-            
-            void stay() {}
         };
         
         struct cubic_actor
@@ -257,7 +241,7 @@ namespace niji { namespace detail
                 _path.unsafe_cubic_to(_pts[1], _pts[2], _pts[3]);
             }
             
-            void join(T& sum, T& len)
+            void join(T sum, T len)
             {
                 bezier::curve_bisect(NIJI_MAX_CUBIC_SUBDIVIDE, sum, len, [this](T t)
                 {
@@ -271,13 +255,6 @@ namespace niji { namespace detail
             {
                 _path.join_cubic(_chops[0], _chops[1], _chops[2], _chops[3]);
             }
-
-            void skip(T& sum, T& len)
-            {
-                join(sum, len);
-            }
-            
-            void stay() {}
         };
 
         template<class Sink>
@@ -285,14 +262,12 @@ namespace niji { namespace detail
         {
             line_to(_first_pt, sink);
             flush(sink);
-            reset();
         }
         
         template<class Sink>
         void cut(Sink& sink)
         {
             flush(sink);
-            reset();
         }
 
         template<class Sink>
@@ -300,13 +275,6 @@ namespace niji { namespace detail
         {
             _path.render(sink);
             _path.clear();
-        }
-        
-        void reset()
-        {
-            _it = _begin;
-            _offset = 0;
-            _skip = false;
         }
 
         path<point_t> _path;

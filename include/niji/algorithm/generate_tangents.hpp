@@ -81,15 +81,11 @@ namespace niji { namespace detail
             _prev_pt = pt3;
         }
         
-        void operator()(end_open_t)
-        {
-            _offset = 0;
-        }
+        void operator()(end_open_t) {}
 
         void operator()(end_closed_t)
         {
             operator()(line_to_t{}, _first_pt);
-            _offset = 0;
         }
         
     private:

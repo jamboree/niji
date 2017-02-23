@@ -169,20 +169,20 @@ namespace niji { namespace detail
     template<class T>
     T* find_cubic_max_curvature(point<T> const src[4], T tValues[3])
     {
-        auto a = src[1] - src[0];
-        auto b = src[2] - src[1] * 2 - src[0];
-        auto c = src[3] + (src[1] - src[2]) * 3 - src[0];
+        auto A = src[1] - src[0];
+        auto B = src[2] - src[1] * 2 - src[0];
+        auto C = src[3] + (src[1] - src[2]) * 3 - src[0];
         
         auto sum = [](point<T> const& pt)
         {
             return pt.x + pt.y;
         };
 
-        T c0 = sum(c * c);
-        T c1 = sum(b * c * 3);
-        T c2 = sum(b * b * 2 + c * a);
-        T c3 = sum(a * b);
-        if (is_nearly_zero(c0)) // we're just a quadratic
+        T c0 = sum(C * C);
+        T c1 = sum(B * C * 3);
+        T c2 = sum(B * B * 2 + C * A);
+        T c3 = sum(A * B);
+        if (is_nearly_zero(c0)) // we're just A quadratic
             return find_unit_quad_roots(c1, c2, c3, tValues);
             
         auto it = solve_cubic_poly(c0, c1, c2, c3, tValues);
@@ -190,7 +190,7 @@ namespace niji { namespace detail
         // now remove extrema where the curvature is zero (mins)
         return std::remove_if(tValues, it, [](T t) {return !(0 < t && t < 1); });
     }
-
+#if 0
     template<int n, int k, class = void>
     struct binomial_coeff;
 
@@ -310,150 +310,214 @@ namespace niji { namespace detail
         T y = derivative<1, n>(t, pts.y...);
         return sqrt(x * x + y * y);
     }
+#endif
+
+    template<class T, int N>
+    struct lgq;
+
+    // LGQ function for quad bezier.
+    // Quad'(t) = 2 (b - a) + 2 (a - 2b + c) t
+    template<class T>
+    struct lgq<T, 3>
+    {
+        point<T> const c1;
+        point<T> const c2;
+
+        lgq(point<T> const& a, point<T> const& b, point<T> const& c)
+          : c1(b - a), c2(a - 2 * b + c)
+        {}
+
+        T operator()(T t) const
+        {
+            using std::sqrt;
+            auto v(c1 + t * c2);
+            return 2 * sqrt(v.x * v.x + v.y * v.y);
+        }
+    };
+
+    // LGQ function for cubic bezier.
+    // A = b - a
+    // B = c - 2b + a
+    // C = d - 3c + 3b - a
+    // 
+    // Cubic'(t) = 3Ct^2 + 6Bt + 3A
+    template<class T>
+    struct lgq<T, 4>
+    {
+        point<T> const c1;
+        point<T> const c2;
+        point<T> const c3;
+
+        lgq(point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
+          : c1(d + 3 * (b - c) - a), c2(2 * (c - 2 * b + a)), c3(b - a)
+        {}
+
+        T operator()(T t) const
+        {
+            using std::sqrt;
+            auto v(t * t * c1 + t * c2 + c3);
+            return 3 * sqrt(v.x * v.x + v.y * v.y);
+        }
+    };
 
     // Legendre-Gauss abscissae
     // (xi values, defined at i=n as the roots of the nth order Legendre
     // polynomial Pn(x))
-    template<class T>
-    struct lg_t
-    {
-        static std::array<T, 3> const& table(std::integral_constant<int, 3>)
-        {
-            static std::array<T, 3> const t =
-            {{
-                NIJI_CONSTANTS(T,
-                    (0.5)
-                    (0.1127016653792583114820734600217600389168)
-                    (0.8872983346207416885179265399782399610832)
-                )
-            }};
-            return t;
-        }
+    template<class T, int N>
+    struct lg_t_table;
 
-        static std::array<T, 4> const& table(std::integral_constant<int, 4>)
+    template<class T>
+    struct lg_t_table<T, 3> : std::array<T, 3>
+    {
+        lg_t_table() : array
         {
-            static std::array<T, 4> const t =
-            {{
-                NIJI_CONSTANTS(T,
-                    (0.3300094782075718675986671204483776563998)
-                    (0.6699905217924281324013328795516223436002)
-                    (0.06943184420297371238802675555359524745215)
-                    (0.9305681557970262876119732444464047525478)
-                )
-            }};
-            return t;
-        }
+            NIJI_CONSTANTS(T,
+                (0.5)
+                (0.1127016653792583114820734600217600389168)
+                (0.8872983346207416885179265399782399610832)
+            )
+        } {}
     };
+
+    template<class T>
+    struct lg_t_table<T, 4> : std::array<T, 4>
+    {
+        lg_t_table() : array
+        {
+            NIJI_CONSTANTS(T,
+                (0.3300094782075718675986671204483776563998)
+                (0.6699905217924281324013328795516223436002)
+                (0.06943184420297371238802675555359524745215)
+                (0.9305681557970262876119732444464047525478)
+            )
+        } {}
+    };
+
+    template<class T, int N>
+    lg_t_table<T, N> const lg_t = {};
 
     // Legendre-Gauss weights
     // (wi values, defined by a function linked to in the Bezier primer article)
-    template<class T>
-    struct lg_c
-    {
-        static std::array<T, 3> const& table(std::integral_constant<int, 3>)
-        {
-            static std::array<T, 3> const t =
-            {{
-                NIJI_CONSTANTS(T,
-                    (0.8888888888888888888888888888888888888888)
-                    (0.5555555555555555555555555555555555555555)
-                    (0.5555555555555555555555555555555555555555)
-                )
-            }};
-            return t;
-        }
+    template<class T, int N>
+    struct lg_c_table;
 
-        static std::array<T, 4> const& table(std::integral_constant<int, 4>)
-        {
-            static std::array<T, 4> const t =
-            {{
-                NIJI_CONSTANTS(T,
-                    (0.6521451548625461426269360507780005927646)
-                    (0.6521451548625461426269360507780005927646)
-                    (0.3478548451374538573730639492219994072353)
-                    (0.3478548451374538573730639492219994072353)
-                )
-            }};
-            return t;
-        }
-    };
-    
-    template<class T, class... Points>
-    T length_impl(Points const&... pts)
+    template<class T>
+    struct lg_c_table<T, 3> : std::array<T, 3>
     {
-        std::integral_constant<int, sizeof...(Points)> _n;
-        auto c = lg_c<T>::table(_n).begin(),
-             e = lg_c<T>::table(_n).end(),
-             t = lg_t<T>::table(_n).begin();
-        T sum(0);
-        for( ; c != e; ++c, ++t)
-            sum += *c * lgq(*t, pts...);
+        lg_c_table() : array
+        {
+            NIJI_CONSTANTS(T,
+                (0.8888888888888888888888888888888888888888)
+                (0.5555555555555555555555555555555555555555)
+                (0.5555555555555555555555555555555555555555)
+            )
+        } {}
+    };
+
+    template<class T>
+    struct lg_c_table<T, 4> : std::array<T, 4>
+    {
+        lg_c_table() : array
+        {
+            NIJI_CONSTANTS(T,
+                (0.6521451548625461426269360507780005927646)
+                (0.6521451548625461426269360507780005927646)
+                (0.3478548451374538573730639492219994072353)
+                (0.3478548451374538573730639492219994072353)
+            )
+        } {}
+    };
+
+    template<class T, int N>
+    lg_c_table<T, N> const lg_c = {};
+
+    template<class T>
+    inline T length_impl(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
+    {
+        lgq<T, 3> lgq(pt1, pt2, pt3);
+        T sum =
+            lg_c<T, 3>[0] * lgq(lg_t<T, 3>[0]) +
+            lg_c<T, 3>[1] * lgq(lg_t<T, 3>[1]) +
+            lg_c<T, 3>[2] * lgq(lg_t<T, 3>[2]);
         return sum / 2;
     }
+
+    template<class T>
+    inline T length_impl(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3, point<T> const& pt4)
+    {
+        lgq<T, 4> lgq(pt1, pt2, pt3, pt4);
+        T sum =
+            lg_c<T, 4>[0] * lgq(lg_t<T, 4>[0]) +
+            lg_c<T, 4>[1] * lgq(lg_t<T, 4>[1]) +
+            lg_c<T, 4>[2] * lgq(lg_t<T, 4>[2]) +
+            lg_c<T, 4>[3] * lgq(lg_t<T, 4>[3]);
+        return sum / 2;
+    }
+
+    template<class T>
+    struct quad_circle_points_table : std::array<point<T>, 17>
+    {
+        quad_circle_points_table(T tan_pi_over_8, T root2_over_2) : array
+        {
+            point<T>(1, 0)
+          , point<T>(1, tan_pi_over_8)
+          , point<T>(root2_over_2, root2_over_2)
+          , point<T>(tan_pi_over_8, 1)
+        
+          , point<T>(0, 1)
+          , point<T>(-tan_pi_over_8, 1)
+          , point<T>(-root2_over_2, root2_over_2)
+          , point<T>(-1, tan_pi_over_8)
+        
+          , point<T>(-1, 0)
+          , point<T>(-1, -tan_pi_over_8)
+          , point<T>(-root2_over_2, -root2_over_2)
+          , point<T>(-tan_pi_over_8, -1)
+        
+          , point<T>(0, -1)
+          , point<T>(tan_pi_over_8, -1)
+          , point<T>(root2_over_2, -root2_over_2)
+          , point<T>(1, -tan_pi_over_8)
+        
+          , point<T>(1, 0)
+        } {}
+    };
+
+    template<class T>
+    struct cubic_circle_points_table : std::array<point<T>, 13>
+    {
+        cubic_circle_points_table(T cubic_arc_factor) : array
+        {
+            point<T>(1, 0)
+          , point<T>(1, cubic_arc_factor)
+          , point<T>(cubic_arc_factor, 1)
+          
+          , point<T>(0, 1)
+          , point<T>(-cubic_arc_factor, 1)
+          , point<T>(-1, cubic_arc_factor)
+          
+          , point<T>(-1, 0)
+          , point<T>(-1, -cubic_arc_factor)
+          , point<T>(-cubic_arc_factor, -1)
+          
+          , point<T>(0, -1)
+          , point<T>(cubic_arc_factor, -1)
+          , point<T>(1, -cubic_arc_factor)
+          
+          , point<T>(1, 0)
+        } {}
+    };
 }}
 
 namespace niji { namespace bezier
 {
     template<class T>
-    std::array<point<T>, 17> const& quad_circle_points()
-    {
-        using constants::tan_pi_over_8;
-        using constants::root2_over_2;
+    detail::quad_circle_points_table<T> const quad_circle_points =
+        {constants::tan_pi_over_8<T>(), constants::root2_over_2<T>()};
 
-        static std::array<point<T>, 17> pts =
-        {{
-            point<T>(1, 0)
-          , point<T>(1, tan_pi_over_8<T>())
-          , point<T>(root2_over_2<T>(), root2_over_2<T>())
-          , point<T>(tan_pi_over_8<T>(), 1)
-        
-          , point<T>(0, 1)
-          , point<T>(-tan_pi_over_8<T>(), 1)
-          , point<T>(-root2_over_2<T>(), root2_over_2<T>())
-          , point<T>(-1, tan_pi_over_8<T>())
-        
-          , point<T>(-1, 0)
-          , point<T>(-1, -tan_pi_over_8<T>())
-          , point<T>(-root2_over_2<T>(), -root2_over_2<T>())
-          , point<T>(-tan_pi_over_8<T>(), -1)
-        
-          , point<T>(0, -1)
-          , point<T>(tan_pi_over_8<T>(), -1)
-          , point<T>(root2_over_2<T>(), -root2_over_2<T>())
-          , point<T>(1, -tan_pi_over_8<T>())
-        
-          , point<T>(1, 0)
-        }};
-        return pts;
-    }
-    
     template<class T>
-    std::array<point<T>, 13> const& cubic_circle_points()
-    {
-        using constants::cubic_arc_factor;
-
-        static std::array<point<T>, 13> pts =
-        {{
-            point<T>(1, 0)
-          , point<T>(1, cubic_arc_factor<T>())
-          , point<T>(cubic_arc_factor<T>(), 1)
-          
-          , point<T>(0, 1)
-          , point<T>(-cubic_arc_factor<T>(), 1)
-          , point<T>(-1, cubic_arc_factor<T>())
-          
-          , point<T>(-1, 0)
-          , point<T>(-1, -cubic_arc_factor<T>())
-          , point<T>(-cubic_arc_factor<T>(), -1)
-          
-          , point<T>(0, -1)
-          , point<T>(cubic_arc_factor<T>(), -1)
-          , point<T>(1, -cubic_arc_factor<T>())
-          
-          , point<T>(1, 0)
-        }};
-        return pts;
-    }
+    detail::cubic_circle_points_table<T> const cubic_circle_points =
+        {constants::cubic_arc_factor<T>()};
     
     template<class T>
     inline T quad_length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
@@ -647,7 +711,7 @@ namespace niji { namespace bezier
             }
     
             int whole_count = oct << 1;
-            point<T> const* q = quad_circle_points<T>().begin();
+            point<T> const* q = quad_circle_points<T>.begin();
             std::copy(q, q + (whole_count + 3), out);
             if (truncate_quad_at(out + whole_count, point<T>(x, y)))
                 whole_count += 2;
@@ -872,7 +936,7 @@ namespace niji { namespace bezier
             }
     
             int whole_count = quad * 3;
-            auto q = cubic_circle_points<T>().begin();
+            auto q = cubic_circle_points<T>.begin();
             std::copy(q, q + (whole_count + 4), out);
             if (truncate_cubic_at(out + whole_count, point<T>(x, y)))
                 whole_count += 3;
@@ -891,7 +955,7 @@ namespace niji { namespace bezier
     }
 
     template<class T, class F>
-    T curve_bisect(unsigned subdivide, T& sum, T& len, F&& f)
+    T curve_bisect(unsigned subdivide, T sum, T len, F&& f)
     {
         T L = 0, R = len, left = 0, right = 1, t = sum / R, d;
         for (; ; --subdivide)
@@ -913,8 +977,6 @@ namespace niji { namespace bezier
             }
             t = left + (right - left) * (sum - L) / (R - L);
         }
-        len -= d;
-        sum = 0;
         return t;
     }
 }}
