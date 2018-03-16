@@ -1,18 +1,18 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2017 Jamboree
+    Copyright (c) 2017-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef NIJI_MAKE_GENERATOR_HPP_INCLUDED
-#define NIJI_MAKE_GENERATOR_HPP_INCLUDED
+#ifndef NIJI_MAKE_GRAPHIC_HPP_INCLUDED
+#define NIJI_MAKE_GRAPHIC_HPP_INCLUDED
 
 #include <type_traits>
 
 namespace niji
 {
     template<class Point, class F>
-    struct generator_path
+    struct graphic_path
     {
         using point_type = Point;
         
@@ -40,7 +40,7 @@ namespace niji
     };
     
     template<class Point, class F>
-    inline generator_path<Point, F> make_generator(F&& f)
+    inline graphic_path<Point, F> make_graphic(F&& f)
     {
         return {std::forward<F>(f)};
     }

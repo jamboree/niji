@@ -48,7 +48,7 @@ render(ellipse<double>({100, 100}, 50) | views::dash<double>({6, 2}), sink);
 
 ## License
 
-    Copyright (c) 2014-2017 Jamboree
+    Copyright (c) 2014-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
