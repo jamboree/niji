@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,8 +11,8 @@
 #include <niji/path.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/vector.hpp>
-#include <niji/support/math/constants.hpp>
-#include <niji/support/math/functions.hpp>
+#include <niji/support/constants.hpp>
+#include <niji/support/numeric.hpp>
 #include <niji/support/bezier.hpp>
 
 namespace niji { namespace detail
@@ -57,9 +57,9 @@ namespace niji { namespace detail
     {
         // need more precise fixed normalization
         if (dot >= 0)   // shallow or line
-            return is_nearly_zero(1 - dot) ? angle_type::nearly_line : angle_type::shallow;
+            return numeric::is_nearly_zero(1 - dot) ? angle_type::nearly_line : angle_type::shallow;
         else            // sharp or 180
-            return is_nearly_zero(1 + dot) ? angle_type::nearly180 : angle_type::sharp;
+            return numeric::is_nearly_zero(1 + dot) ? angle_type::nearly180 : angle_type::sharp;
     }
     
     template<class T>

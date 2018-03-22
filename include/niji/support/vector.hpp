@@ -9,8 +9,8 @@
 
 #include <type_traits>
 #include <niji/support/point.hpp>
-#include <niji/support/math/constants.hpp>
-#include <niji/support/math/functions.hpp>
+#include <niji/support/constants.hpp>
+#include <niji/support/numeric.hpp>
 
 namespace niji
 {
@@ -26,7 +26,7 @@ namespace niji { namespace vectors
     template<class T>
     inline T norm_square(vector<T> const& v)
     {
-        return square_sum(v.x, v.y);
+        return numeric::square_sum(v.x, v.y);
     }
 
     template<class T>

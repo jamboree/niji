@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -9,15 +9,15 @@
 
 #include <array>
 #include <cmath>
+#include <cassert>
 #include <algorithm>
-#include <boost/assert.hpp>
 #include <niji/support/traits.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/transform/affine.hpp>
 #include <niji/support/transform/rotate.hpp>
-#include <niji/support/math/constants.hpp>
-#include <niji/support/math/functions.hpp>
+#include <niji/support/constants.hpp>
+#include <niji/support/numeric.hpp>
 
 // N O T E
 // -------
@@ -42,25 +42,25 @@ namespace niji { namespace detail
         using std::swap;
     
         if (a == 0)
-            return roots + valid_unit_divide(-c, b, *roots);
+            return roots + numeric::valid_unit_divide(-c, b, *roots);
     
         T* r = roots;
 
         T root = b * b - 4 * a * c;
-        if (root < 0 || isnan(root)) // complex roots
+        if (root < 0 || isnan(root)) // Complex roots.
             return roots;
 
         root = sqrt(root);
     
         T q = (b < 0) ? (root - b) / 2 : -(b + root) / 2;
-        r += valid_unit_divide(q, a, *r);
-        r += valid_unit_divide(c, q, *r);
+        r += numeric::valid_unit_divide(q, a, *r);
+        r += numeric::valid_unit_divide(c, q, *r);
         if (r - roots == 2)
         {
             if (roots[0] > roots[1])
                 swap(roots[0], roots[1]);
-            else if (roots[0] == roots[1])  // nearly-equal?
-                --r; // skip the double root
+            else if (roots[0] == roots[1])  // Nearly-equal?
+                --r; // Skip the double root.
         }
         return r;
     }
@@ -72,9 +72,15 @@ namespace niji { namespace detail
     template<class T>
     T* find_quad_extrema(T a, T b, T c, T tValues[1])
     {
-        return tValues + valid_unit_divide(a - b, a - b - b + c, *tValues);    
+        return tValues + numeric::valid_unit_divide(a - b, a - b - b + c, *tValues);
     }
-    
+
+    template<class T>
+    inline void flatten_double_quad_extrema(T coords[14])
+    {
+        coords[2] = coords[6] = coords[4];
+    }
+
     // Cubic'(t) = At^2 + Bt + C, where
     // A = 3(-a + 3(b - c) + d)
     // B = 6(a - 2b + c)
@@ -83,14 +89,20 @@ namespace niji { namespace detail
     template<class T>
     T* find_cubic_extrema(T a, T b, T c, T d, T tValues[2])
     {
-        // we divide A,B,C by 3 to simplify
+        // We divide A,B,C by 3 to simplify.
         T A = d - a + 3 * (b - c);
         T B = 2 * (a - b - b + c);
         T C = b - a;
         return find_unit_quad_roots(A, B, C, tValues);
     }
-    
-    // Solve coeff(t) == 0, returning the number of roots that
+
+    template<class T>
+    void flatten_double_cubic_extrema(T coords[14])
+    {
+        coords[4] = coords[8] = coords[6];
+    }
+
+    // Solve coeff(t) == 0, returning the end of roots that
     // lie withing 0 < t < 1.
     // coeff[0]t^3 + coeff[1]t^2 + coeff[2]t + coeff[3]
     //    
@@ -125,11 +137,11 @@ namespace niji { namespace detail
         T* roots = tValues;
         auto next_root = [&roots](T r)
         {
-            if (0 < r && r < 1)
+            if (0 <= r && r < 1)
                 *roots++ = r;
         };
     
-        if (R2MinusQ3 < 0) // we have 3 real roots
+        if (R2MinusQ3 < 0) // We have 3 real roots.
         {
             T theta = acos(R / sqrt(Q3));
             T neg2RootQ = -2 * sqrt(Q);
@@ -138,11 +150,11 @@ namespace niji { namespace detail
             next_root(neg2RootQ * cos((theta + constants::two_pi<T>()) / 3) - adiv3);
             next_root(neg2RootQ * cos((theta - constants::two_pi<T>()) / 3) - adiv3);
     
-            // now sort the roots
+            // Now sort the roots.
             std::sort(tValues, roots);
             roots = std::unique(tValues, roots);
         }
-        else // we have 1 real root
+        else // We have 1 real root.
         {
             T A = abs(R) + sqrt(R2MinusQ3);
             A = pow(A, constants::third<T>());
@@ -182,12 +194,12 @@ namespace niji { namespace detail
         T c1 = sum(B * C * 3);
         T c2 = sum(B * B * 2 + C * A);
         T c3 = sum(A * B);
-        if (is_nearly_zero(c0)) // we're just A quadratic
+        if (is_nearly_zero(c0)) // We're just a quadratic.
             return find_unit_quad_roots(c1, c2, c3, tValues);
             
         auto it = solve_cubic_poly(c0, c1, c2, c3, tValues);
     
-        // now remove extrema where the curvature is zero (mins)
+        // Now remove extrema where the curvature is zero (mins).
         return std::remove_if(tValues, it, [](T t) {return !(0 < t && t < 1); });
     }
 #if 0
@@ -531,8 +543,18 @@ namespace niji { namespace bezier
         return detail::length_impl<T>(pt1, pt2, pt3, pt4);
     }
 
+    template<class T>
+    inline bool is_mono_quad(T y0, T y1, T y2)
+    {
+        if (y0 == y1)
+            return true;
+        if (y0 < y1)
+            return y1 <= y2;
+        return y1 >= y2;
+    }
+
     // Find t value for quadratic [a, b, c] = d.
-    // Return 0 if there is no solution within [0, 1)
+    // Return end if there is no solution within [0, 1)
     template<class T>
     T* quad_solve(T a, T b, T c, T d, T tValues[2])
     {
@@ -546,9 +568,9 @@ namespace niji { namespace bezier
     template<class T>
     inline T quad_eval(T a, T b, T c, T t)
     {
-        BOOST_ASSERT(0 <= t && t <= 1);
+        assert(0 <= t && t <= 1);
 
-        return interpolate(interpolate(a, b, t), interpolate(b, c, t), t);
+        return numeric::interpolate(numeric::interpolate(a, b, t), numeric::interpolate(b, c, t), t);
     }
     
     template<class T>
@@ -564,13 +586,44 @@ namespace niji { namespace bezier
     template<class T>
     void chop_quad_at(point<T> const in[3], point<T> out[5], T t)
     {
-        BOOST_ASSERT(0 <= t && t <= 1);
+        assert(0 <= t && t <= 1);
         
         out[0] = in[0];
         out[1] = points::interpolate(in[0], in[1], t);
         out[3] = points::interpolate(in[1], in[2], t);
         out[2] = points::interpolate(out[1], out[3], t);
         out[4] = in[2];
+    }
+
+    // Returns 0 for 1 quad, and 1 for two quads, either way the answer is
+    // stored in dst[]. Guarantees that the 1/2 quads will be monotonic.
+    template<int I, class T>
+    int chop_quad_at_extrema(const point<T> src[3], point<T> dst[5])
+    {
+        using std::abs;
+
+        T a = src[0].coord<I>();
+        T b = src[1].coord<I>();
+        T c = src[2].coord<I>();
+
+        if (numeric::is_not_monotonic(a, b, c))
+        {
+            T tValue;
+            if (numeric::valid_unit_divide(a - b, a - b - b + c, tValue))
+            {
+                chop_quad_at(src, dst, tValue);
+                detail::flatten_double_quad_extrema(&dst[0].coord<I>());
+                return 1;
+            }
+            // If we get here, we need to force dst to be monotonic, even though
+            // we couldn't compute a unit_divide value (probably underflow).
+            b = abs(a - b) < abs(b - c) ? a : c;
+        }
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = src[2];
+        dst[1].coord<I>() = b;
+        return 0;
     }
 
     // F(t)    = a (1 - t) ^ 2 + 2 b t (1 - t) + c t ^ 2
@@ -687,11 +740,11 @@ namespace niji { namespace bezier
             if (0 == y)
             {
                 oct = 4;        // 180
-                BOOST_ASSERT(is_nearly_zero(abs(x + 1)));
+                assert(is_nearly_zero(abs(x + 1)));
             }
             else if (0 == x)
             {
-                BOOST_ASSERT(is_nearly_zero(abs_y - 1));
+                assert(is_nearly_zero(abs_y - 1));
                 if (y > 0)
                     oct = 2;    // 90
                 else
@@ -736,20 +789,23 @@ namespace niji { namespace bezier
         T C = 3 * (b - a);
         T B = 3 * (c - b) - C;
         T A = d - (a + C + B);
-        return detail::solve_cubic_poly(A, B, C, a - e, tValues);
+        auto end = detail::solve_cubic_poly(A, B, C, a - e, tValues);
+        if (tValues == end && a == e)
+            *end++ = 0;
+        return end;
     }
 
     template<class T>
     T cubic_eval(T a, T b, T c, T d, T t)
     {
-        BOOST_ASSERT(0 <= t && t <= 1);
+        assert(0 <= t && t <= 1);
 
-        T ab = interpolate(a, b, t);
-        T bc = interpolate(b, c, t);
-        T cd = interpolate(c, d, t);
-        T abc = interpolate(ab, bc, t);
-        T bcd = interpolate(bc, cd, t);
-        return interpolate(abc, bcd, t);
+        T ab = numeric::interpolate(a, b, t);
+        T bc = numeric::interpolate(b, c, t);
+        T cd = numeric::interpolate(c, d, t);
+        T abc = numeric::interpolate(ab, bc, t);
+        T bcd = numeric::interpolate(bc, cd, t);
+        return numeric::interpolate(abc, bcd, t);
     }
 
     template<class T>
@@ -769,7 +825,7 @@ namespace niji { namespace bezier
     template<class T>
     void chop_cubic_at(point<T> const in[4], point<T> out[7], T t)
     {
-        BOOST_ASSERT(0 <= t && t <= 1);
+        assert(0 <= t && t <= 1);
         
         point<T> bc = points::interpolate(in[1], in[2], t);
     
@@ -806,7 +862,7 @@ namespace niji { namespace bezier
             in = tmp;
             
             // watch out in case the renormalized t isn't in range
-            if (!valid_unit_divide(tit[1] - *tit, 1 - *tit, t))
+            if (!numeric::valid_unit_divide(tit[1] - *tit, 1 - *tit, t))
             {
                 // if we can't, just create a degenerate cubic
                 out[4] = out[5] = out[6] = in[3];
@@ -825,6 +881,30 @@ namespace niji { namespace bezier
         else
             chop_cubic_at(in, out, tValues, it);
         return it - tValues + 1;
+    }
+
+    // Given 4 points on a cubic bezier, chop it into 1, 2, 3 beziers such that
+    // the resulting beziers are monotonic in Y. This is called by the scan
+    // converter.  Depending on what is returned, dst[] is treated as follows:
+    // 0   dst[0..3] is the original cubic
+    // 1   dst[0..3] and dst[3..6] are the two new cubics
+    // 2   dst[0..3], dst[3..6], dst[6..9] are the three new cubics
+    // If dst == null, it is ignored and only the count is returned.
+    template<int I, class T>
+    int chop_cubic_at_extrema(const point<T> src[4], point<T> dst[10])
+    {
+        T tValues[2];
+        auto it = detail::find_cubic_extrema(src[0].coord<I>(), src[1].coord<I>(), src[2].coord<I>(), src[3].coord<I>(), tValues);
+        int roots = int(it - tValues);
+        chop_cubic_at(src, dst, tValues, it);
+        if (dst && roots > 0)
+        {
+            // We do some cleanup to ensure our Y extrema are flat.
+            detail::flatten_double_cubic_extrema(&dst[0].coord<I>());
+            if (roots == 2)
+                detail::flatten_double_cubic_extrema(&dst[3].coord<I>());
+        }
+        return roots;
     }
 
     // given a cubic-curve and a point (x,y), chop the cubic at that point and place
@@ -915,11 +995,11 @@ namespace niji { namespace bezier
             if (0 == y)
             {
                 quad = 2;        // 180
-                BOOST_ASSERT(is_nearly_zero(abs(x + 1)));
+                assert(is_nearly_zero(abs(x + 1)));
             }
             else if (0 == x)
             {
-                BOOST_ASSERT(is_nearly_zero(abs_y - 1));
+                assert(is_nearly_zero(abs_y - 1));
                 if (y > 0)
                     quad = 1;    // 90
                 else
