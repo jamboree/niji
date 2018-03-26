@@ -31,6 +31,18 @@
 
 namespace niji { namespace detail
 {
+    template<class T>
+    inline T poly_eval(T A, T B, T C, T t)
+    {
+        return (A * t + B) * t + C;
+    }
+
+    template<class T>
+    inline T poly_eval(T A, T B, T C, T D, T t)
+    {
+        return poly_eval(A, B, C, t) * t + D;
+    }
+
     // Q = -1/2 (B + sign(B) sqrt[B*B - 4*A*C])
     // x1 = Q / A
     // x2 = C / Q
@@ -564,13 +576,14 @@ namespace niji { namespace bezier
         T C = a - d;
         return detail::find_unit_quad_roots(A, B, C, tValues);
     }
-    
+
     template<class T>
-    inline T quad_eval(T a, T b, T c, T t)
+    inline T quad_eval(T c0, T c1, T c2, T t)
     {
         assert(0 <= t && t <= 1);
-
-        return numeric::interpolate(numeric::interpolate(a, b, t), numeric::interpolate(b, c, t), t);
+        T A = c2 - 2 * c1 + c0;
+        T B = 2 * (c1 - c0);
+        return detail::poly_eval(A, B, c0, t);
     }
     
     template<class T>
@@ -796,16 +809,14 @@ namespace niji { namespace bezier
     }
 
     template<class T>
-    T cubic_eval(T a, T b, T c, T d, T t)
+    T cubic_eval(T c0, T c1, T c2, T c3, T t)
     {
         assert(0 <= t && t <= 1);
-
-        T ab = numeric::interpolate(a, b, t);
-        T bc = numeric::interpolate(b, c, t);
-        T cd = numeric::interpolate(c, d, t);
-        T abc = numeric::interpolate(ab, bc, t);
-        T bcd = numeric::interpolate(bc, cd, t);
-        return numeric::interpolate(abc, bcd, t);
+        T A = c3 + 3 * (c1 - c2) - c0;
+        T B = 3 * (c2 - c1 - c1 + c0);
+        T C = 3 * (c1 - c0);
+        T D = c0;
+        return detail::poly_eval(A, B, C, D, t);
     }
 
     template<class T>

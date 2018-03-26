@@ -16,28 +16,6 @@
 namespace niji { namespace detail
 {
     template<class T>
-    inline T poly_eval(T A, T B, T C, T t)
-    {
-        return (A * t + B) * t + C;
-    }
-
-    template<class T>
-    inline T poly_eval(T A, T B, T C, T D, T t)
-    {
-        return poly_eval(A, B, C, t) * t + D;
-    }
-
-    template<class T>
-    T eval_cubic_pts(T c0, T c1, T c2, T c3, T t)
-    {
-        T A = c3 + 3 * (c1 - c2) - c0;
-        T B = 3 * (c2 - c1 - c1 + c0);
-        T C = 3 * (c1 - c0);
-        T D = c0;
-        return poly_eval(A, B, C, D, t);
-    }
-
-    template<class T>
     inline bool check_on_curve(T x, T y, const point<T>& start, const point<T>& end)
     {
         if (start.y == end.y)
@@ -259,7 +237,7 @@ namespace niji { namespace detail
         if (!chop_mono_cubic_at_coord<1>(pts, pt.y, t))
             return 0;
 
-        T xt = eval_cubic_pts(pts[0].x, pts[1].x, pts[2].x, pts[3].x, t);
+        T xt = bezier::cubic_eval(pts[0].x, pts[1].x, pts[2].x, pts[3].x, t);
         if (numeric::is_nearly_zero(abs(xt - pt.x)))
         {
             if (pt.x != pts[3].x || pt.y != pts[3].y) // Don't test end points; they're start points.
@@ -341,7 +319,9 @@ namespace niji
             return true;
         if (test.on_curve_count <= 1)
             return !!test.on_curve_count;
-        return !!(test.on_curve_count & 1);
+        if (test.on_curve_count & 1)
+            return true;
+        return false;
         // TODO:
         // If the point touches an even number of curves, and the fill is winding, check for
         // coincidence. Count coincidence as places where the on curve points have identical tangents.
