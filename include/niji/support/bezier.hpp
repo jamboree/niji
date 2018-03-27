@@ -22,7 +22,7 @@
 // N O T E
 // -------
 // Most of the algorithms here are borrowed from Skia, see
-// src/core/SkGeometry.cpp for more detail.
+// "src/core/SkGeometry.cpp" for more detail.
 // Some are from Pomax's excellent article about bezier, see
 // http://pomax.github.io/bezierinfo/.
 

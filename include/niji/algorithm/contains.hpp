@@ -13,6 +13,10 @@
 #include <niji/support/point.hpp>
 #include <niji/support/bezier.hpp>
 
+// N O T E
+// -------
+// The algorithms are borrowed from Skia, see "src/core/SkPath.cpp".
+
 namespace niji { namespace detail
 {
     template<class T>
