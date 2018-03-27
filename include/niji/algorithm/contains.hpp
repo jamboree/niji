@@ -160,42 +160,48 @@ namespace niji { namespace detail
             pts[3].coord<I>() - c
         };
 
-        // Newton¡VRaphson method.
-        // Quadratic convergence, tcpicallc <= 3 iterations.
+        // Linear convergence, typically 16 iterations.
 
-        // Initial guess.
-        // TODO(turk): Check for zero denominator? Shouldn't happen unless the curve
-        // is not onlc monotonic but degenerate.
-        T t1 = crv[0] / (crv[0] - crv[3]);
+        T tNeg, tPos; // Negative and positive function parameters.
+        // Check that the endpoints straddle zero.
+        if (crv[0] < 0)
+        {
+            if (crv[3] < 0)
+                return false;
+            tNeg = 0;
+            tPos = 1;
+        }
+        else if (crv[0] > 0)
+        {
+            if (crv[3] > 0)
+                return false;
+            tNeg = 1;
+            tPos = 0;
+        }
+        else
+        {
+            t = 0;
+            return true;
+        }
 
-        // Newton's iterations.
-        const T tol = T(1) / 16384;  // This leaves 2 fixed noise bits.
-        T t0;
-        const int maxiters = 5;
-        int iters = 0;
-        bool converged;
+        constexpr T tol = T(1) / 65536;
         do
         {
-            t0 = t1;
-            T c01 = numeric::interpolate(crv[0], crv[1], t0);
-            T c12 = numeric::interpolate(crv[1], crv[2], t0);
-            T c23 = numeric::interpolate(crv[2], crv[3], t0);
-            T c012 = numeric::interpolate(c01, c12, t0);
-            T c123 = numeric::interpolate(c12, c23, t0);
-            T c0123 = numeric::interpolate(c012, c123, t0);
-            T der = (c123 - c012) * 3;
-            // TODO(turk): check for der==0: horizontal(I==1)/vertical(I==0).
-            t1 -= c0123 / der;
-            converged = abs(t1 - t0) <= tol;  // NaN-safe
-            ++iters;
-        } while (!converged && (iters < maxiters));
-        t = t1; // Return the result.
+            T tMid = (tPos + tNeg) / 2;
+            T val = bezier::cubic_eval(crv[0], crv[1], crv[2], crv[3], tMid);
+            if (val == 0)
+            {
+                t = tMid;
+                return true;
+            }
+            if (val < 0)
+                tNeg = tMid;
+            else
+                tPos = tMid;
+        } while (abs(tPos - tNeg) > tol);   // Nan-safe
 
-        // The result might be valid, even if outside of the range [0, 1], but
-        // we never evaluate a Bezier outside this interval, so we return false.
-        if (t1 < 0 || t1 > 1)
-            return false; // This shouldn't happen, but check anyway.
-        return converged;
+        t = (tNeg + tPos) / 2;
+        return true;
     }
 
     template<class T>
@@ -321,10 +327,11 @@ namespace niji
             return !!test.on_curve_count;
         if (test.on_curve_count & 1)
             return true;
-        return false;
+        
         // TODO:
         // If the point touches an even number of curves, and the fill is winding, check for
         // coincidence. Count coincidence as places where the on curve points have identical tangents.
+        return false;
     }
 }
 
