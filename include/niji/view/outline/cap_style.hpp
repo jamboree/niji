@@ -1,11 +1,11 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-#ifndef NIJI_VIEW_STROKE_CAP_STYLE_HPP_INCLUDED
-#define NIJI_VIEW_STROKE_CAP_STYLE_HPP_INCLUDED
+#ifndef NIJI_VIEW_OUTLINE_CAP_STYLE_HPP_INCLUDED
+#define NIJI_VIEW_OUTLINE_CAP_STYLE_HPP_INCLUDED
 
 #include <functional>
 #include <niji/path.hpp>

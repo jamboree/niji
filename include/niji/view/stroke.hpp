@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,9 +10,9 @@
 #include <type_traits>
 #include <niji/support/view.hpp>
 #include <niji/support/just.hpp>
-#include <niji/view/stroke/detail.hpp>
-#include <niji/view/stroke/join_style.hpp>
-#include <niji/view/stroke/cap_style.hpp>
+#include <niji/view/detail/stroker.hpp>
+#include <niji/view/outline/join_style.hpp>
+#include <niji/view/outline/cap_style.hpp>
 
 namespace niji
 {

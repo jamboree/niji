@@ -206,7 +206,7 @@ namespace niji { namespace detail
         T c1 = sum(B * C * 3);
         T c2 = sum(B * B * 2 + C * A);
         T c3 = sum(A * B);
-        if (is_nearly_zero(c0)) // We're just a quadratic.
+        if (numeric::is_nearly_zero(c0)) // We're just a quadratic.
             return find_unit_quad_roots(c1, c2, c3, tValues);
             
         auto it = solve_cubic_poly(c0, c1, c2, c3, tValues);

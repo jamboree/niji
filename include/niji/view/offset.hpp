@@ -10,8 +10,8 @@
 #include <boost/assert.hpp>
 #include <niji/support/view.hpp>
 #include <niji/support/just.hpp>
-#include <niji/view/stroke/detail.hpp>
-#include <niji/view/stroke/join_style.hpp>
+#include <niji/view/detail/offset_outline.hpp>
+#include <niji/view/outline/join_style.hpp>
 
 namespace niji
 {
@@ -36,37 +36,37 @@ namespace niji
         {
             void operator()(move_to_t, point<T> const& pt)
             {
-                _stroker.move_to(pt);
+                _outline.move_to(pt);
             }
 
             void operator()(line_to_t, point<T> const& pt)
             {
-                _stroker.line_to(pt);
+                _outline.line_to(pt);
             }
 
             void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
             {
-                _stroker.quad_to(pt1, pt2);
+                _outline.quad_to(pt1, pt2);
             }
 
             void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
             {
-                _stroker.cubic_to(pt1, pt2, pt3);
+                _outline.cubic_to(pt1, pt2, pt3);
             }
             
             void operator()(end_closed_t)
             {
-                _stroker.close(true); // TODO
-                _stroker.finish(_sink, _reversed);
+                _outline.close(true); // TODO
+                _outline.finish(_sink, _reversed);
             }
             
             void operator()(end_open_t)
             {
-                _stroker.finish(_sink, _reversed);
+                _outline.finish(_sink, _reversed);
             }
 
             Sink& _sink;
-            detail::stroker<T, Joiner, detail::non_capper> _stroker;
+            detail::offset_outline<T, Joiner> _outline;
             bool _reversed;
         };
         
@@ -75,7 +75,7 @@ namespace niji
         {
             using adaptor_t = adaptor<Sink>;
             if (r)
-                niji::render(path, adaptor_t{sink, {r, joiner, {}}, false});
+                niji::render(path, adaptor_t{sink, {r, joiner}, false});
         }
 
         template<class Path, class Sink>
