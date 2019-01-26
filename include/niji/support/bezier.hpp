@@ -393,7 +393,7 @@ namespace niji { namespace detail
     template<class T>
     struct lg_t_table<T, 3> : std::array<T, 3>
     {
-        lg_t_table() : array
+        lg_t_table() : std::array<T, 3>
         {
             NIJI_CONSTANTS(T,
                 (0.5)
@@ -406,7 +406,7 @@ namespace niji { namespace detail
     template<class T>
     struct lg_t_table<T, 4> : std::array<T, 4>
     {
-        lg_t_table() : array
+        lg_t_table() : std::array<T, 4>
         {
             NIJI_CONSTANTS(T,
                 (0.3300094782075718675986671204483776563998)
@@ -428,7 +428,7 @@ namespace niji { namespace detail
     template<class T>
     struct lg_c_table<T, 3> : std::array<T, 3>
     {
-        lg_c_table() : array
+        lg_c_table() : std::array<T, 3>
         {
             NIJI_CONSTANTS(T,
                 (0.8888888888888888888888888888888888888888)
@@ -441,7 +441,7 @@ namespace niji { namespace detail
     template<class T>
     struct lg_c_table<T, 4> : std::array<T, 4>
     {
-        lg_c_table() : array
+        lg_c_table() : std::array<T, 4>
         {
             NIJI_CONSTANTS(T,
                 (0.6521451548625461426269360507780005927646)
@@ -481,7 +481,7 @@ namespace niji { namespace detail
     template<class T>
     struct quad_circle_points_table : std::array<point<T>, 17>
     {
-        quad_circle_points_table(T tan_pi_over_8, T root2_over_2) : array
+        quad_circle_points_table(T tan_pi_over_8, T root2_over_2) : std::array<point<T>, 17>
         {
             point<T>(1, 0)
           , point<T>(1, tan_pi_over_8)
@@ -510,7 +510,7 @@ namespace niji { namespace detail
     template<class T>
     struct cubic_circle_points_table : std::array<point<T>, 13>
     {
-        cubic_circle_points_table(T cubic_arc_factor) : array
+        cubic_circle_points_table(T cubic_arc_factor) : std::array<point<T>, 13>
         {
             point<T>(1, 0)
           , point<T>(1, cubic_arc_factor)
@@ -735,7 +735,7 @@ namespace niji { namespace bezier
         // check for (effectively) coincident vectors
         // this can happen if our angle is nearly 0 or nearly 180 (y == 0)
         // ... we use the dot-prod to distinguish between 0 and 180 (x > 0)
-        if (is_nearly_zero(abs_y) && x > 0 && ((y >= 0 && is_ccw) || (y <= 0 && !is_ccw)))
+        if (numeric::is_nearly_zero(abs_y) && x > 0 && ((y >= 0 && is_ccw) || (y <= 0 && !is_ccw)))
         {
             // just return the start-point
             out[0] = point<T>(1, 0);
@@ -753,11 +753,11 @@ namespace niji { namespace bezier
             if (0 == y)
             {
                 oct = 4;        // 180
-                assert(is_nearly_zero(abs(x + 1)));
+                assert(numeric::is_nearly_zero(abs(x + 1)));
             }
             else if (0 == x)
             {
-                assert(is_nearly_zero(abs_y - 1));
+                assert(numeric::is_nearly_zero(abs_y - 1));
                 if (y > 0)
                     oct = 2;    // 90
                 else
@@ -989,7 +989,7 @@ namespace niji { namespace bezier
         // check for (effectively) coincident vectors
         // this can happen if our angle is nearly 0 or nearly 180 (y == 0)
         // ... we use the dot-prod to distinguish between 0 and 180 (x > 0)
-        if (is_nearly_zero(abs_y) && x > 0 && ((y >= 0 && is_ccw) || (y <= 0 && !is_ccw)))
+        if (numeric::is_nearly_zero(abs_y) && x > 0 && ((y >= 0 && is_ccw) || (y <= 0 && !is_ccw)))
         {
             // just return the start-point
             out[0] = point<T>(1, 0);
@@ -1006,11 +1006,11 @@ namespace niji { namespace bezier
             if (0 == y)
             {
                 quad = 2;        // 180
-                assert(is_nearly_zero(abs(x + 1)));
+                assert(numeric::is_nearly_zero(abs(x + 1)));
             }
             else if (0 == x)
             {
-                assert(is_nearly_zero(abs_y - 1));
+                assert(numeric::is_nearly_zero(abs_y - 1));
                 if (y > 0)
                     quad = 1;    // 90
                 else
@@ -1054,14 +1054,14 @@ namespace niji { namespace bezier
             d = f(t);
             if (d < sum)
             {
-                if (is_nearly_zero(sum - d) || !subdivide)
+                if (numeric::is_nearly_zero(sum - d) || !subdivide)
                     break;
                 left = t;
                 L = d;
             }
             else
             {
-                if (is_nearly_zero(d - sum) || !subdivide)
+                if (numeric::is_nearly_zero(d - sum) || !subdivide)
                     break;
                 right = t;
                 R = d;

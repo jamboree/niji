@@ -345,6 +345,13 @@ namespace niji
                     _index_tags.emplace_back(index, tag);
             }
         }
+
+        void reopen()
+        {
+            if (!_index_tags.empty() &&
+                _index_tags.back().index == nodes_base::size())
+                _index_tags.pop_back();
+        }
         
         void clear() noexcept
         {

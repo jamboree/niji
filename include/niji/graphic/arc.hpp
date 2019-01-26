@@ -47,6 +47,8 @@ namespace niji
         void render_impl(Sink& sink, T start, T stop) const
         {
             using namespace command;
+            using std::sin;
+            using std::cos;
 
             transforms::affine<T> affine;
             T rx = box.width() / 2, ry = box.height() / 2;

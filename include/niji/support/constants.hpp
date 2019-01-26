@@ -55,7 +55,7 @@ namespace boost { namespace math { namespace constants { namespace detail
     {
         static T apply(float const, double const, long double const, const char* p)
         {
-            return convert_from_string<T>(p);
+            return boost::math::tools::convert_from_string<T>(p);
         }
     };
 
