@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2018 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -136,7 +136,7 @@ namespace niji
     template<class T, class U, std::enable_if_t<std::is_arithmetic<U>::value, bool> = true>\
     inline point<std::common_type_t<T, U>> operator op(U const& val, point<T> const& pt)\
     {                                                                           \
-        return point<std::common_type_t<T, U>>(pt.x op val, pt.y op val);       \
+        return point<std::common_type_t<T, U>>(val op pt.x, val op pt.y);       \
     }                                                                           \
     template<class T, class U>                                                  \
     inline point<std::common_type_t<T, U>> operator op(point<T> const& lhs, point<U> const& rhs)\

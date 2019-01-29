@@ -28,7 +28,7 @@ namespace niji { namespace detail
             _cap(base::_outer, base::_prev_pt, vector_t(-base::_r, 0), true);
         }
 
-        void move_to(point_t const& pt)
+        void move_to(typename base::point_t const& pt)
         {
             cut(false);
             base::move_to_no_cap(pt);
