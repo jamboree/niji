@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2019 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,7 +21,7 @@ namespace niji
 
     template<class T>
     struct is_geometry
-      : std::integral_constant<bool, !std::is_same<geometry_tag_t<T>, void>::value>
+      : std::bool_constant<!std::is_same<geometry_tag_t<T>, void>::value>
     {};
     
     template<class T>

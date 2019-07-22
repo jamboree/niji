@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2019 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -14,6 +14,7 @@
 #include <boost/geometry/core/coordinate_type.hpp>
 #include <boost/geometry/core/tags.hpp>
 #include <niji/support/traits.hpp>
+#include <niji/support/is_narrowing.hpp>
 #include <niji/support/convert_geometry.hpp>
 
 namespace niji
@@ -29,14 +30,19 @@ namespace niji
 
         point(T x, T y) : x(x), y(y) {}
         
-        template<class U>
+        template<class U, std::enable_if_t<std::is_convertible_v<U, T> && !is_narrowing_v<U, T>, bool> = true>
         point(point<U> const& other) : x(other.x), y(other.y) {}
+
+        template<class U, std::enable_if_t<is_narrowing_v<U, T>, bool> = true>
+        explicit point(point<U> const& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
         
+#if 0
         template<class Point, std::enable_if_t<is_point<Point>::value, bool> = true>
         point(Point const& other)
           : x(boost::geometry::get<0>(other)), y(boost::geometry::get<1>(other))
         {}
-        
+#endif
+
         void reset(T x2, T y2)
         {
             x = std::move(x2);
@@ -155,7 +161,7 @@ namespace niji
     using dpoint = point<double>;
 }
 
-namespace niji { namespace points
+namespace niji::points
 {
     template<class T, class F>
     inline point<T> transform(point<T> const& a, point<T> const& b, F&& f)
@@ -174,9 +180,9 @@ namespace niji { namespace points
     {
         return transform(a, b, [t](T a, T b) { return a + (b - a) * t; });
     }
-}}
+}
 
-namespace boost { namespace geometry { namespace traits
+namespace boost::geometry::traits
 {
     template<class T>
     struct tag<niji::point<T>>
@@ -216,6 +222,6 @@ namespace boost { namespace geometry { namespace traits
             p.template coord<Dimension>() = value;
         }
     };
-}}}
+}
 
 #endif

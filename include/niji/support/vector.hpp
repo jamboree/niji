@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2019 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,7 +21,7 @@ namespace niji
     using dvector = vector<double>;
 }
 
-namespace niji { namespace vectors
+namespace niji::vectors
 {
     template<class T>
     inline T norm_square(vector<T> const& v)
@@ -73,9 +73,9 @@ namespace niji { namespace vectors
     {
         return from.x * to.y > from.y * to.x;
     }
-}}
+}
 
-namespace niji { namespace vectors { namespace traits
+namespace niji::vectors::traits
 {
     //
     // Default Implemetation
@@ -120,9 +120,9 @@ namespace niji { namespace vectors { namespace traits
             return dot(v1, v2) <= limit * sqrt(norm_square(v1) * norm_square(v2));
         }
     };
-}}}
+}
 
-namespace niji { namespace vectors
+namespace niji::vectors
 {    
     template<class T>
     inline bool is_degenerated(vector<T> const& v)
@@ -141,6 +141,6 @@ namespace niji { namespace vectors
     {
         return traits::too_pinchy<T>::apply(v1, v2);
     }
-}}
+}
 
 #endif
