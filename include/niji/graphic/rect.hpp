@@ -16,7 +16,7 @@
 #include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/box.hpp>
-#include <niji/support/math/constants.hpp>
+#include <niji/support/constants.hpp>
 
 namespace niji { namespace rect_policy
 {
