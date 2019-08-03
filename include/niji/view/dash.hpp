@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2019 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -12,6 +12,7 @@
 #include <boost/range/iterator.hpp>
 #include <niji/support/view.hpp>
 #include <niji/support/just.hpp>
+#include <niji/support/numeric.hpp>
 #include <niji/view/detail/dash.hpp>
 
 namespace niji
@@ -91,7 +92,7 @@ namespace niji
 
 namespace niji { namespace views
 {
-    template<class T, class Pattern = std::initializer_list<T> const&, class U = one>
+    template<class T, class Pattern = std::initializer_list<T> const&, class U = numeric::one>
     inline auto dash(Pattern&& p, just_t<T> offset = {}, U weight = {})
     {
         return dash_view<T, Pattern, U>{std::forward<Pattern>(p), offset, weight};

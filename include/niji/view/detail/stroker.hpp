@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2019 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -24,8 +24,8 @@ namespace niji { namespace detail
 
         void degenerated_dot()
         {
-            _cap(base::_outer, base::_prev_pt, vector_t(base::_r, 0), true);
-            _cap(base::_outer, base::_prev_pt, vector_t(-base::_r, 0), true);
+            _cap(base::_outer, base::_prev_pt, base::vector_t(base::_r, 0), true);
+            _cap(base::_outer, base::_prev_pt, base::vector_t(-base::_r, 0), true);
         }
 
         void move_to(typename base::point_t const& pt)
