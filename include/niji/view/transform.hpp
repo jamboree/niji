@@ -16,7 +16,7 @@ namespace niji
     struct transform_view : view<transform_view<F>>, F
     {
         template<class Path>
-        using point_type = typename std::result_of<F(path_point_t<Path>)>::type;
+        using point_type = decltype(std::declval<F>()(std::declval<path_point_t<Path>>()));
 
         using F::F;
 
