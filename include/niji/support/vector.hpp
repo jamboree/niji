@@ -9,8 +9,9 @@
 
 #include <type_traits>
 #include <niji/support/point.hpp>
-#include <niji/support/constants.hpp>
+#include <niji/support/numbers.hpp>
 #include <niji/support/numeric.hpp>
+#include <boost/math/constants/constants.hpp>
 
 namespace niji
 {
@@ -80,11 +81,8 @@ namespace niji::vectors::traits
     //
     // Default Implemetation
     //
-    template<class T, class = void>
-    struct is_degenerated;
-    
-    template<class T>
-    struct is_degenerated<T, std::enable_if_t<std::is_floating_point<T>::value>>
+    template<Float T>
+    struct is_degenerated
     {
         static bool apply(vector<T> const& v)
         {
@@ -93,25 +91,19 @@ namespace niji::vectors::traits
         }
     };
     
-    template<class T, class = void>
-    struct too_curvy;
-    
-    template<class T>
-    struct too_curvy<T, std::enable_if_t<std::is_floating_point<T>::value>>
+    template<Float T>
+    struct too_curvy
     {
         static bool apply(vector<T> const& v1, vector<T> const& v2)
         {
             using std::sqrt;
-            static T const limit((constants::root_two<T>() * 5 + 1) / 10);
+            static T const limit((numbers::root_two<T> * 5 + 1) / 10);
             return dot(v1, v2) <= limit * sqrt(norm_square(v1) * norm_square(v2));
         }
     };
-    
-    template<class T, class = void>
-    struct too_pinchy;
-    
-    template<class T>
-    struct too_pinchy<T, std::enable_if_t<std::is_floating_point<T>::value>>
+
+    template<Float T>
+    struct too_pinchy
     {
         static bool apply(vector<T> const& v1, vector<T> const& v2)
         {

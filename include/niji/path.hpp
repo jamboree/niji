@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,30 +7,27 @@
 #ifndef NIJI_PATH_HPP_INCLUDED
 #define NIJI_PATH_HPP_INCLUDED
 
+#include <vector>
 #include <initializer_list>
-#include <boost/assert.hpp>
-#include <boost/container/vector.hpp>
-#include <boost/container/deque.hpp>
-#include <boost/container/allocator_traits.hpp>
-#include <niji/path_fwd.hpp>
-#include <niji/render.hpp>
+#include <memory_resource>
+#include <niji/core.hpp>
 #include <niji/detail/path.hpp>
 
 namespace niji
 {
-    template<class Node, class Alloc>
-    class path : boost::container::deque<Node, Alloc>
+    template<class Node, class Alloc = std::pmr::polymorphic_allocator<Node>>
+    class path : std::vector<Node, Alloc>
     {
         template<class N, class A>
         friend class path;
 
-        using nodes_base = boost::container::deque<Node, Alloc>;
+        using nodes_base = std::vector<Node, Alloc>;
         using index_tag_t = detail::index_tag_t;
         using index_tag_alloc_t =
-            typename boost::container::allocator_traits<Alloc>::template
-                portable_rebind_alloc<index_tag_t>::type;
+            typename std::allocator_traits<Alloc>::template
+            rebind_alloc<index_tag_t>;
         using index_tag_container =
-            boost::container::vector<index_tag_t, index_tag_alloc_t>;
+            std::vector<index_tag_t, index_tag_alloc_t>;
         using index_tag_iterator = typename index_tag_container::const_iterator;
 
     public:
@@ -82,45 +79,39 @@ namespace niji
                     _index_tags.back().index == nodes_base::size());
         }
 
-        struct sink
+        struct joiner
         {
-            explicit sink(path& own, bool moving = true)
+            explicit joiner(path& own, bool moving = true)
               : _own(own), _moving(moving)
             {}
 
-            // silent MSVC warning C4512
-            sink& operator=(sink const&) = delete;
-
-            void operator()(move_to_t, Node const& pt)
+            void move_to(Node const& pt)
             {
                 _prev = pt;
                 _moving = true;
             }
 
-            void operator()(line_to_t, Node const& pt)
+            void line_to(Node const& pt)
             {
                 line_start();
                 _own.join(pt);
             }
 
-            void operator()(quad_to_t, Node const& pt1, Node const& pt2)
+            void quad_to(Node const& pt1, Node const& pt2)
             {
                 line_start();
                 _own.unsafe_quad_to(pt1, pt2);
             }
 
-            void operator()(cubic_to_t, Node const& pt1, Node const& pt2, Node const& pt3)
+            void cubic_to(Node const& pt1, Node const& pt2, Node const& pt3)
             {
                 line_start();
                 _own.unsafe_cubic_to(pt1, pt2, pt3);
             }
 
-            void operator()(end_tag tag)
-            {
-                _own.delimit(tag);
-                _moving = true;
-            }
-            
+            void end_closed() { end_path(end_tag::closed); }
+            void end_open() { end_path(end_tag::open); }
+
         private:
             
             void line_start()
@@ -133,14 +124,16 @@ namespace niji
                 }
             }
 
+            void end_path(end_tag tag)
+            {
+                _own.delimit(tag);
+                _moving = true;
+            }
+
             path& _own;
             Node _prev;
             bool _moving;
         };
-        
-        template<class Path>
-        using requires_valid =
-            std::enable_if_t<is_renderable<Path, sink>::value, bool>;
 
         // Constructors
         //----------------------------------------------------------------------
@@ -160,8 +153,8 @@ namespace niji
           , _index_tags(std::move(other._index_tags), alloc)
         {}
 
-        template<class Path, requires_valid<Path> = true>
-        path(Path const& other, Alloc const& alloc = Alloc())
+        template<Path P>
+        explicit path(P const& other, Alloc const& alloc = Alloc())
           : nodes_base(alloc), _index_tags(alloc)
         {
             add(other);
@@ -187,32 +180,31 @@ namespace niji
         // Path Traversal
         //----------------------------------------------------------------------
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            if (detail::path_render_impl(sink, static_cast<nodes_base const&>(*this), _index_tags))
-                sink(command::end_open);
+            if (detail::path_iterate_impl(sink, static_cast<nodes_base const&>(*this), _index_tags))
+                sink.end_open();
         }
         
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void reverse_iterate(Sink& sink) const
         {
-            namespace rng = ::boost::adaptors;
-            using namespace command;
-
             char tag = end_tag::open;
-            bool needs_ending = detail::path_render_impl
+            bool needs_ending = detail::path_iterate_impl
             (
-                sink
-              , rng::reverse(static_cast<nodes_base const&>(*this))
-              , rng::transform(rng::reverse(_index_tags),
-                    index_tag_t::remap(nodes_base::size(), tag))
+                sink,
+                detail::reverse_range<const_iterator>{begin(), end()},
+                detail::reverse_transformed_range{
+                    detail::iterator_range{_index_tags.begin(), _index_tags.end()},
+                    index_tag_t::remap(nodes_base::size(), tag)
+                }
             );
             if (needs_ending)
             {
                 if (tag == end_tag::closed)
-                    sink(end_closed);
+                    sink.end_closed();
                 else
-                    sink(end_open);
+                    sink.end_open();
             }
         }
 
@@ -242,7 +234,7 @@ namespace niji
         }
 
         template<class Nodes = std::initializer_list<Node>>
-        void join_sequence(Nodes const& pts)
+        void join_range(Nodes const& pts)
         {
             join(pts.begin(), pts.end());
         }
@@ -252,7 +244,7 @@ namespace niji
         template<class Path>
         void join_path(Path const& p)
         {
-            niji::render(p, sink(*this, is_ended()));
+            niji::iterate(p, joiner(*this, is_ended()));
         }
 
         // niji::path always starts with move_to.
@@ -266,7 +258,7 @@ namespace niji
         template<class Path>
         auto add(Path const& p)
         {
-            niji::render(p, sink(*this, true));
+            niji::iterate(p, joiner(*this, true));
         }
 
         template<class Point, class A>
@@ -312,7 +304,7 @@ namespace niji
         
         void unsafe_quad_to(Node const& pt1, Node const& pt2)
         {
-            BOOST_ASSERT(!is_ended());
+            assert(!is_ended());
             _index_tags.emplace_back(nodes_base::size(), 2);
             nodes_base::push_back(pt1);
             nodes_base::push_back(pt2);
@@ -320,7 +312,7 @@ namespace niji
 
         void unsafe_cubic_to(Node const& pt1, Node const& pt2, Node const& pt3)
         {
-            BOOST_ASSERT(!is_ended());
+            assert(!is_ended());
             _index_tags.emplace_back(nodes_base::size(), 3);
             nodes_base::push_back(pt1);
             nodes_base::push_back(pt2);
@@ -364,15 +356,8 @@ namespace niji
             nodes_base::swap(other);
             _index_tags.swap(other._index_tags);
         }
-        
-        template<class Archive>
-        void serialize(Archive& ar, unsigned version)
-        {
-            ar & _index_tags & *static_cast<nodes_base*>(this);
-        }
 
     private:
-
         index_tag_container _index_tags;
     };
 }

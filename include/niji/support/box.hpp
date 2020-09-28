@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,73 +7,43 @@
 #ifndef NIJI_SUPPORT_BOX_HPP_INCLUDED
 #define NIJI_SUPPORT_BOX_HPP_INCLUDED
 
-#include <boost/geometry/core/access.hpp>
-#include <boost/geometry/core/cs.hpp>
-#include <boost/geometry/core/coordinate_dimension.hpp>
-#include <boost/geometry/core/coordinate_type.hpp>
-#include <boost/geometry/core/tags.hpp>
-#include <boost/geometry/algorithms/make.hpp>
-#include <niji/support/traits.hpp>
 #include <niji/support/vector.hpp>
-#include <niji/support/convert_geometry.hpp>
 
 namespace niji
 {
-    template<class Point>
+    template<class T>
     struct box
     {
-        using coordinate_type =
-            typename boost::geometry::traits::coordinate_type<Point>::type;
+        using coordinate_type = T;
+        using point_type = point<T>;
+
+        point<T> min_corner;
+        point<T> max_corner;
         
-        using point_type = Point;
+        box() = default;
         
-        using coord_t = coordinate_type;
-        
-        Point min_corner, max_corner;
-        
-        box() {}
-        
-        box(coord_t x1, coord_t y1, coord_t x2, coord_t y2)
-          : min_corner(boost::geometry::make<Point>(x1, y1))
-          , max_corner(boost::geometry::make<Point>(x2, y2))
+        box(T x1, T y1, T x2, T y2)
+          : min_corner(point<T>(x1, y1))
+          , max_corner(point<T>(x2, y2))
         {}
 
-        box(Point const& min_corner, Point const& max_corner)
+        box(point<T> const& min_corner, point<T> const& max_corner)
           : min_corner(min_corner)
           , max_corner(max_corner)
         {}
 
-        template<class Pt>
-        box(box<Pt> const& other)
-          : min_corner(convert_geometry<Point>(other.min_corner))
-          , max_corner(convert_geometry<Point>(other.max_corner))
-        {}
-                
-        template<class Box, std::enable_if_t<is_box<Box>::value, bool> = true>
-        box(Box const& other)
+        void reset(T x1, T y1, T x2, T y2)
         {
-            boost::geometry::convert(other, *this);
+            min_corner = point<T>(x1, y1);
+            max_corner = point<T>(x2, y2);
         }
 
-        void reset(coord_t x1, coord_t y1, coord_t x2, coord_t y2)
-        {
-            min_corner = boost::geometry::make<Point>(x1, y1);
-            max_corner = boost::geometry::make<Point>(x2, y2);
-        }
-
-        void reset(Point const& min, Point const& max)
+        void reset(point<T> const& min, point<T> const& max)
         {
             min_corner = min;
             max_corner = max;
         }
 
-        template<class Pt>
-        void reset(Pt const& min, Pt const& max)
-        {
-            min_corner = convert_geometry<Point>(min);
-            max_corner = convert_geometry<Point>(max);
-        }
-        
         coordinate_type width() const
         {
             return length<0>();
@@ -87,65 +57,55 @@ namespace niji
         template<std::size_t N>
         coordinate_type length() const
         {
-            using boost::geometry::get;
-            
-            return get<N>(max_corner) - get<N>(min_corner);
+            return max_corner.coord<N>() - min_corner.coord<N>();
         }
         
         bool empty() const
         {
-            using boost::geometry::get;
-
-            return get<0>(max_corner) == get<0>(min_corner) ||
-                   get<1>(max_corner) == get<1>(min_corner);
+            return
+                max_corner.x == min_corner.x ||
+                max_corner.y == min_corner.y;
         }
         
-        bool invalid()
+        bool invalid() const
         {
-            using boost::geometry::get;
-            
-            return get<0>(min_corner) > get<0>(max_corner) ||
-                   get<1>(min_corner) > get<1>(max_corner);
+            return
+                min_corner.x > max_corner.x ||
+                min_corner.y > max_corner.y;
         }
         
         void clear()
         {
-            max_corner = Point();
-            min_corner = Point();
+            max_corner = point<T>();
+            min_corner = point<T>();
         }
 
-        void translate(vector<coord_t> const& v)
+        void translate(vector<T> const& v)
         {
             translate(v.x, v.y);
         }
 
-        void translate(coord_t x, coord_t y)
+        void translate(T x, T y)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            set<0>(min_corner, get<0>(min_corner) + x);
-            set<1>(min_corner, get<1>(min_corner) + y);
-            set<0>(max_corner, get<0>(max_corner) + x);
-            set<1>(max_corner, get<1>(max_corner) + y);
+            min_corner.x = min_corner.x + x;
+            min_corner.y = min_corner.y + y;
+            max_corner.x = max_corner.x + x;
+            max_corner.y = max_corner.y + y;
         }
 
         void correct()
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            if (get<0>(max_corner) < get<0>(min_corner))
+            if (max_corner.x < min_corner.x)
             {
-                coordinate_type tmp(get<0>(min_corner));
-                set<0>(min_corner, get<0>(max_corner));
-                set<0>(max_corner, tmp);
+                T tmp = min_corner.x;
+                min_corner.x = max_corner.x;
+                max_corner.x = tmp;
             }
-            if (get<1>(max_corner) < get<1>(min_corner))
+            if (max_corner.y < min_corner.y)
             {
-                coordinate_type tmp(get<1>(min_corner));
-                set<1>(min_corner, get<1>(max_corner));
-                set<1>(max_corner, tmp);
+                T tmp = min_corner.y;
+                min_corner.y = max_corner.y;
+                max_corner.y = tmp;
             }
         }
 
@@ -157,144 +117,114 @@ namespace niji
             return ret;
         }
 
-        void offset(vector<coord_t> const& v)
+        void offset(vector<T> const& v)
         {
             offset(v.x, v.y);
         }
 
-        void offset(coord_t x, coord_t y)
+        void offset(T x, T y)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            set<0>(min_corner, get<0>(min_corner) - x);
-            set<1>(min_corner, get<1>(min_corner) - y);
-            set<0>(max_corner, get<0>(max_corner) + x);
-            set<1>(max_corner, get<1>(max_corner) + y);
+            min_corner.x = min_corner.x - x;
+            min_corner.y = min_corner.y - y;
+            max_corner.x = max_corner.x + x;
+            max_corner.y = max_corner.y + y;
         }
 
         void expand(box const& other)
         {
-            using boost::geometry::get;
-
-            expand_coord<0>(get<0>(other.min_corner), get<0>(other.max_corner));
-            expand_coord<1>(get<1>(other.min_corner), get<1>(other.max_corner));
+            expand_coord<0>(other.min_corner.x, other.max_corner.x);
+            expand_coord<1>(other.min_corner.y, other.max_corner.y);
         }
         
         template<std::size_t N>
-        void expand_coord(coord_t min, coord_t max)
+        void expand_coord(T min, T max)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            auto min_ = get<N>(min_corner);
-            auto max_ = get<N>(max_corner);
+            auto min_ = min_corner.coord<N>();
+            auto max_ = max_corner.coord<N>();
             if (min_ == max_)
             {
-                set<N>(min_corner, min);
-                set<N>(max_corner, max);
+                min_corner.coord<N>() = min;
+                max_corner.coord<N>() = max;
                 return;
             }
             if (min < min_)
-                set<N>(min_corner, min);
+                min_corner.coord<N>() = min;
             if (max > max_)
-                set<N>(max_corner, max);
+                max_corner.coord<N>() = max;
         }
 
         bool clip(box const& other)
         {
-            using boost::geometry::get;
-
             return
-                clip_coord<0>(get<0>(other.min_corner), get<0>(other.max_corner))
-             && clip_coord<1>(get<1>(other.min_corner), get<1>(other.max_corner));
+                clip_coord<0>(other.min_corner.x, other.max_corner.x) &&
+                clip_coord<1>(other.min_corner.y, other.max_corner.y);
         }
 
         template<std::size_t N>
-        bool clip_coord(coord_t min, coord_t max)
+        bool clip_coord(T min, T max)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            auto min_ = get<N>(min_corner);
-            auto max_ = get<N>(max_corner);
+            auto min_ = min_corner.coord<N>();
+            auto max_ = max_corner.coord<N>();
             if (min_ >= max)
             {
-                set<N>(max_corner, min_);
+                max_corner.coord<N>() = min_;
                 return false;
             }
             if (max_ <= min)
             {
-                set<N>(min_corner, max_);
+                min_corner.coord<N>() = max_;
                 return false;
             }
             if (min_ < min)
-                set<N>(min_corner, min);
+                min_corner.coord<N>() = min;
             if (max < max_)
-                set<N>(max_corner, max);
+                max_corner.coord<N>() = max;
             return true;
         }
         
         template<std::size_t N>
-        Point const& corner() const
+        point<T> const& corner() const
         {
             return *(&min_corner + N);
         }
         
         template<std::size_t N>
-        Point& corner()
+        point<T>& corner()
         {
             return *(&min_corner + N);
         }
 
-        Point center() const
+        point<T> center() const
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            Point pt;
-            set<0>(pt, (get<0>(min_corner) + get<0>(max_corner)) / 2);
-            set<1>(pt, (get<1>(min_corner) + get<1>(max_corner)) / 2);
+            point<T> pt;
+            pt.x = (min_corner.x + max_corner.x) / 2;
+            pt.y = (min_corner.y + max_corner.y) / 2;
             return pt;
         }
 
-        template<class Archive>
-        void serialize(Archive& ar, unsigned version)
+        template<class Sink>
+        void iterate(Sink& sink) const
         {
-            ar & min_corner & max_corner;
+            iterate_impl<false>(sink);
+        }
+
+        template<class Sink>
+        void reverse_iterate(Sink& sink) const
+        {
+            iterate_impl<true>(sink);
+        }
+
+    private:
+        template<bool R, class Sink>
+        void iterate_impl(Sink& sink) const
+        {
+            sink.move_to(min_corner);
+            sink.line_to(point<T>(corner<!R>().x, corner<R>().y));
+            sink.line_to(max_corner);
+            sink.line_to(point<T>(corner<R>().x, corner<!R>().y));
+            sink.end_closed();
         }
     };
 }
-
-namespace boost { namespace geometry { namespace traits
-{
-    template<class Point>
-    struct tag<niji::box<Point>>
-    {
-        using type = box_tag;
-    };
-    
-    template<class Point>
-    struct point_type<niji::box<Point>>
-    {
-        using type = Point;
-    };
-    
-    template<class Point, std::size_t Index, std::size_t Dimension>
-    struct indexed_access<niji::box<Point>, Index, Dimension>
-    {
-        using coordinate_type = typename boost::geometry::coordinate_type<Point>::type;
-
-        static inline coordinate_type get(niji::box<Point> const& b)
-        {
-            return boost::geometry::get<Dimension>(b.template corner<Index>());
-        }
-    
-        static inline void set(niji::box<Point>& b, coordinate_type value)
-        {
-            boost::geometry::set<Dimension>(b.template corner<Index>(), value);
-        }
-    };
-}}}
 
 #endif

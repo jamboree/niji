@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,11 +8,10 @@
 #define NIJI_SUPPORT_TRANSFORM_AFFINE_HPP_INCLUDED
 
 #include <type_traits>
-#include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/vector.hpp>
 
-namespace niji { namespace transforms
+namespace niji::transforms
 {
     template<class T>
     struct translate;
@@ -36,9 +35,7 @@ namespace niji { namespace transforms
         template<class Point>
         result_type operator()(Point const& pt) const
         {
-            using boost::geometry::get;
-
-            auto x = get<0>(pt), y = get<1>(pt)
+            auto x = get_x(pt), y = get_y(pt)
                , d = base.determinant()
                , a = (x - base.tx) / d
                , b = (y - base.ty) / d;
@@ -382,12 +379,10 @@ namespace niji { namespace transforms
         template<class Point>
         point<T> operator()(Point const& pt) const
         {
-            using boost::geometry::get;
-
-            auto x = get<0>(pt), y = get<1>(pt);
+            auto x = get_x(pt), y = get_y(pt);
             return {sx * x + shx * y + tx, sy * y + shy * x + ty};
         }
     };
-}}
+}
 
 #endif

@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2019 Jamboree
+    Copyright (c) 2019-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,12 +8,11 @@
 #define NIJI_SUPPORT_IS_NARROWING_HPP_INCLUDED
 
 #include <type_traits>
-#include <niji/detail/enable_if_valid.hpp>
 
 namespace niji::detail
 {
-    template<class From, class To>
-    auto is_narrowing_aux(int) -> enable_if_valid_t<decltype(To{std::declval<From>()}), std::false_type>;
+    template<class From, class To> requires requires(From val) { To{val}; }
+    std::false_type is_narrowing_aux(int);
 
     template<class From, class To>
     std::true_type is_narrowing_aux(...);

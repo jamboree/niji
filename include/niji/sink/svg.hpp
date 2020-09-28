@@ -8,8 +8,6 @@
 #define NIJI_SINK_SVG_HPP_INCLUDED
 
 #include <iostream>
-#include <boost/geometry/core/access.hpp>
-#include <niji/support/command.hpp>
 
 namespace niji
 {
@@ -23,39 +21,35 @@ namespace niji
         {}
         
         template<class Point>
-        void operator()(move_to_t, Point const& pt)
+        void move_to(Point const& pt)
         {
-            using boost::geometry::get;
-            out << 'M' << get<0>(pt) << ',' << get<1>(pt);
+            out << 'M' << get_x(pt) << ',' << get_y(pt);
         }
         
         template<class Point>
-        void operator()(line_to_t, Point const& pt)
+        void line_to(Point const& pt)
         {
-            using boost::geometry::get;
-            out << 'L' << get<0>(pt) << ',' << get<1>(pt);
+            out << 'L' << get_x(pt) << ',' << get_y(pt);
         }
         
         template<class Point>
-        void operator()(quad_to_t, Point const& pt1, Point const& pt2)
+        void quad_to(Point const& pt1, Point const& pt2)
         {
-            using boost::geometry::get;
-            out << 'Q' << get<0>(pt1) << ',' << get<1>(pt1)
-                << ' ' << get<0>(pt2) << ',' << get<1>(pt2);
+            out << 'Q' << get_x(pt1) << ',' << get_y(pt1)
+                << ' ' << get_x(pt2) << ',' << get_y(pt2);
         }
         
         template<class Point>
-        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3)
+        void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3)
         {
-            using boost::geometry::get;
-            out << 'C' << get<0>(pt1) << ',' << get<1>(pt1)
-                << ' ' << get<0>(pt2) << ',' << get<1>(pt2)
-                << ' ' << get<0>(pt3) << ',' << get<1>(pt3);
+            out << 'C' << get_x(pt1) << ',' << get_y(pt1)
+                << ' ' << get_x(pt2) << ',' << get_y(pt2)
+                << ' ' << get_x(pt3) << ',' << get_y(pt3);
         }
 
-        void operator()(end_open_t) {}
+        void end_open() {}
         
-        void operator()(end_closed_t)
+        void end_closed()
         {
             out << 'Z';
         }

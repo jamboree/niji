@@ -11,7 +11,13 @@
 #include <cassert>
 #include <type_traits>
 
-namespace niji { namespace numeric
+namespace niji
+{
+    template<class T>
+    concept Float = std::is_floating_point_v<T>;
+}
+
+namespace niji::numeric
 {
     struct one
     {
@@ -37,7 +43,7 @@ namespace niji { namespace numeric
         return a * a + b * b;
     }
 
-    template<class T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
+    template<Float T>
     inline bool is_nearly_zero(T val)
     {
         static constexpr T nearly_zero = T(1) / (1 << 12);
@@ -98,6 +104,6 @@ namespace niji { namespace numeric
     {
         return a + (b - a) * t;
     }
-}}
+}
 
 #endif

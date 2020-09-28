@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2019 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,17 +8,34 @@
 #define NIJI_SUPPORT_POINT_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/geometry/core/access.hpp>
-#include <boost/geometry/core/cs.hpp>
-#include <boost/geometry/core/coordinate_dimension.hpp>
-#include <boost/geometry/core/coordinate_type.hpp>
-#include <boost/geometry/core/tags.hpp>
-#include <niji/support/traits.hpp>
 #include <niji/support/is_narrowing.hpp>
-#include <niji/support/convert_geometry.hpp>
 
 namespace niji
 {
+    template<class T>
+    struct impl_point;
+
+    template<class T>
+    concept Point = requires(T self)
+    {
+        impl_point<T>{};
+    };
+
+    template<Point T>
+    struct point_coordinate
+    {
+        using type = typename impl_point<T>::coordinate_type;
+    };
+
+    template<Point T>
+    using point_coordinate_t = typename point_coordinate<T>::type;
+
+    template<Point P>
+    inline decltype(auto) get_x(P const& p) { return impl_point<P>::get_x(p); }
+
+    template<Point P>
+    inline decltype(auto) get_y(P const& p) { return impl_point<P>::get_y(p); }
+
     template<class T>
     struct point
     {
@@ -29,12 +46,9 @@ namespace niji
         point() : x(), y() {}
 
         point(T x, T y) : x(x), y(y) {}
-        
-        template<class U, std::enable_if_t<std::is_convertible_v<U, T> && !is_narrowing_v<U, T>, bool> = true>
-        point(point<U> const& other) : x(other.x), y(other.y) {}
 
-        template<class U, std::enable_if_t<is_narrowing_v<U, T>, bool> = true>
-        explicit point(point<U> const& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
+        template<class U>
+        explicit(is_narrowing_v<U, T>) point(point<U> const& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
         
 #if 0
         template<class Point, std::enable_if_t<is_point<Point>::value, bool> = true>
@@ -52,12 +66,14 @@ namespace niji
         template<std::size_t N>
         T const& coord() const
         {
+            static_assert(N < 2);
             return *(&x + N);
         }
         
         template<std::size_t N>
         T& coord()
         {
+            static_assert(N < 2);
             return *(&x + N);
         }
         
@@ -125,12 +141,14 @@ namespace niji
             y /= other.y;
             return *this;
         }
+    };
 
-        template<class Archive>
-        void serialize(Archive& ar, unsigned version)
-        {
-            ar & x & y;
-        }
+    template<class T>
+    struct impl_point<point<T>>
+    {
+        using coordinate_type = T;
+        static T get_x(point<T> const& self) { return self.x; }
+        static T get_y(point<T> const& self) { return self.y; }
     };
 
 #define NIJI_DEFINE_POINT_OEPRATOR(op)                                          \
@@ -180,48 +198,6 @@ namespace niji::points
     {
         return transform(a, b, [t](T a, T b) { return a + (b - a) * t; });
     }
-}
-
-namespace boost::geometry::traits
-{
-    template<class T>
-    struct tag<niji::point<T>>
-    {
-        using type = point_tag;
-    };
-
-    template<class T>
-    struct coordinate_type<niji::point<T>>
-    {
-        using type = T;
-    };
-
-    template<class T>
-    struct coordinate_system<niji::point<T>>
-    {
-        using type = cs::cartesian;
-    };
-
-    template<class T>
-    struct dimension<niji::point<T>>
-      : boost::mpl::int_<2>
-    {};
-
-    template<class T, std::size_t Dimension>
-    struct access<niji::point<T>, Dimension>
-    {
-        using point_type = niji::point<T>;
-
-        static inline T get(point_type const& p)
-        {
-            return p.template coord<Dimension>();
-        }
-
-        static inline void set(point_type& p, T value)
-        {
-            p.template coord<Dimension>() = value;
-        }
-    };
 }
 
 #endif

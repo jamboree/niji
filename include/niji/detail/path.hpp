@@ -7,17 +7,105 @@
 #ifndef NIJI_DETAIL_PATH_HPP_INCLUDED
 #define NIJI_DETAIL_PATH_HPP_INCLUDED
 
-#include <boost/iterator/iterator_facade.hpp>
-#include <boost/geometry/core/coordinate_type.hpp>
-#include <boost/range/adaptor/reversed.hpp>
-#include <boost/range/adaptor/transformed.hpp>
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
+#include <iterator>
+#include <niji/core.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 
 namespace niji { namespace detail
 {
+    template<class It>
+    struct iterator_range
+    {
+        It first;
+        It second;
+
+        It begin() const { return first; }
+        It end() const { return second; }
+    };
+
+    template<class It>
+    iterator_range(It, It) -> iterator_range<It>;
+
+    template<class It>
+    struct reverse_range
+    {
+        struct iterator
+        {
+            It _it;
+
+            bool operator==(It const& it) const
+            {
+                return _it == it;
+            }
+
+            bool operator==(iterator const& other) const
+            {
+                return _it == other._it;
+            }
+
+            decltype(auto) operator*() const
+            {
+                return _it[-1];
+            }
+
+            iterator& operator++()
+            {
+                --_it;
+                return *this;
+            }
+
+            iterator operator+(std::ptrdiff_t n) const
+            {
+                return {_it - n};
+            }
+
+            iterator& operator+=(std::ptrdiff_t n)
+            {
+                _it -= n;
+                return *this;
+            }
+        };
+        iterator_range<It> subject;
+
+        iterator begin() const { return {subject.second}; }
+        It end() const { return subject.first; }
+    };
+
+    template<class It, class F>
+    struct reverse_transformed_range
+    {
+        struct iterator
+        {
+            It _it;
+            F _f;
+
+            bool operator==(It const& it) const
+            {
+                return _it == it;
+            }
+
+            decltype(auto) operator*() const
+            {
+                return _f(_it[-1]);
+            }
+
+            iterator& operator++()
+            {
+                --_it;
+                return *this;
+            }
+        };
+        iterator_range<It> subject;
+        F f;
+
+        iterator begin() const { return {subject.second, f}; }
+        It end() const { return subject.first; }
+    };
+
+    template<class It, class F>
+    reverse_transformed_range(iterator_range<It>, F) -> reverse_transformed_range<It, F>;
+
     struct index_tag_t
     {
         std::size_t index;
@@ -72,7 +160,7 @@ namespace niji { namespace detail
     }
 
     template<class Sink, class Nodes, class IndexTags>
-    bool path_render_impl
+    bool path_iterate_impl
     (
         Sink& sink
       , Nodes const& nodes
@@ -80,40 +168,39 @@ namespace niji { namespace detail
       , bool heading = true
     )
     {
-        using namespace command;
-
-        auto it(nodes.begin()), end(nodes.end());
+        auto it = nodes.begin();
+        auto const end = nodes.end();
         for (auto const& i : index_tags)
         {
-            auto tagged(nodes.begin() + i.index);
+            auto const tagged = nodes.begin() + i.index;
             if (it != tagged)
             {
                 if (heading)
-                    sink(move_to, *it);
+                    sink.move_to(*it);
                 else
-                    sink(line_to, *it);
+                    sink.line_to(*it);
                 while (++it != tagged)
-                    sink(line_to, *it);
+                    sink.line_to(*it);
             }
             else if (heading)
                 continue;
             switch (i.tag)
             {
             case end_tag::closed:
-                sink(end_closed);
+                sink.end_closed();
                 heading = true;
                 break;
             case end_tag::open:
-                sink(end_open);
+                sink.end_open();
                 heading = true;
                 break;
             case 2:
-                sink(quad_to, *it, *(it + 1));
+                sink.quad_to(*it, *(it + 1));
                 it += 2;
                 heading = false;
                 break;
             case 3:
-                sink(cubic_to, *it, *(it + 1), *(it + 2));
+                sink.cubic_to(*it, *(it + 1), *(it + 2));
                 it += 3;
                 heading = false;
                 break;
@@ -122,11 +209,11 @@ namespace niji { namespace detail
         if (it != end)
         {
             if (heading)
-                sink(move_to, *it);
+                sink.move_to(*it);
             else
-                sink(line_to, *it);
+                sink.line_to(*it);
             while (++it != end)
-                sink(line_to, *it);
+                sink.line_to(*it);
             return true; // needs ending
         }
         return !heading; // ended
@@ -135,8 +222,8 @@ namespace niji { namespace detail
     template<class NodeIt>
     bool path_is_box(NodeIt it, NodeIt const& end)
     {
-        using node_t = typename boost::iterator_value<NodeIt>::type;
-        using coord_t = typename boost::geometry::coordinate_type<node_t>::type;
+        using node_t = typename NodeIt::value_type;
+        using coord_t = point_coordinate_t<node_t>;
 
         if (end - it != 4)
             return false;
@@ -202,58 +289,54 @@ namespace niji { namespace detail
         }
 
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            render_impl(sink, _begin, begin(), _end, _index_tags, is_closed());
+            iterate_impl(sink, _begin, begin(), _end, _index_tags, is_closed());
         }
         
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void inverse_iterate(Sink& sink) const
         {
-            namespace rng = ::boost::adaptors;
-            
-            boost::reverse_iterator<NodeIt> it(_end), end(begin());
-            render_impl(sink, it, it, end, rng::transform(rng::reverse(_index_tags),
-                index_tag_t::remap_no_end(_end - _begin)), is_closed());
+            std::reverse_iterator<NodeIt> it(_end), end(begin());
+            iterate_impl(sink, it, it, end, reverse_transformed_range{_index_tags,
+                index_tag_t::remap_no_end(_end - _begin)}, is_closed());
         }
 
     private:
         
         template<class Sink, class It, class IndexTags>
-        static void render_impl(Sink& sink, It origin, It it, It end, IndexTags const& index_tags, bool is_closed)
+        static void iterate_impl(Sink& sink, It origin, It it, It end, IndexTags const& index_tags, bool is_closed)
         {
-            using namespace command;
-
             if (it == end)
                 return;
-            sink(move_to, *it++);
+            sink.move_to(*it++);
             for (auto const& i : index_tags)
             {
                 auto tagged(origin + i.index);
                 for ( ; it != tagged; ++it)
-                    sink(line_to, *it);
+                    sink.line_to(*it);
                 switch (i.tag)
                 {
                 case 2:
-                    sink(quad_to, *it, *(it + 1));
+                    sink.quad_to(*it, *(it + 1));
                     it += 2;
                     break;
                 case 3:
-                    sink(cubic_to, *it, *(it + 1), *(it + 2));
+                    sink.cubic_to(*it, *(it + 1), *(it + 2));
                     it += 3;
                     break;
                 }
             }
             for ( ; it != end; ++it)
-                sink(line_to, *it);
+                sink.line_to(*it);
             if (is_closed)
-                sink(end_closed);
+                sink.end_closed();
             else
-                sink(end_open);
+                sink.end_open();
         }
 
         NodeIt _begin, _end;
-        boost::iterator_range<IndexIt> _index_tags;
+        iterator_range<IndexIt> _index_tags;
         std::size_t _offset;
     };
 
@@ -268,13 +351,6 @@ namespace niji { namespace detail
         {}
 
         struct iterator
-          : boost::iterator_facade
-            <
-                iterator
-              , value_type
-              , boost::forward_traversal_tag
-              , reference
-            >
         {
             iterator() {}
 
@@ -283,6 +359,12 @@ namespace niji { namespace detail
               , _tit(std::find_if(tit, rng->_tend, index_tag_is_end()))
               , _tlast(tit), _it(_tit == rng->_tend? _rng->_end : _rng->_begin + _tit->index)
             {}
+
+            iterator& operator++()
+            {
+                increment();
+                return *this;
+            }
 
             void increment()
             {
@@ -297,12 +379,12 @@ namespace niji { namespace detail
                 _it = _tit == tend? _rng->_end : _rng->_begin + _tit->index;
             }
 
-            bool equal(iterator const& other) const
+            bool operator==(iterator const& other) const
             {
                 return _it == other._it;
             }
             
-            reference dereference() const
+            reference operator*() const
             {
                 std::size_t offset = 0;
                 auto tlast = _tlast;
@@ -346,19 +428,19 @@ namespace niji { namespace detail
         using point_type = typename NodeIt::value_type;
 
         incomplete_path(NodeIt const& begin, NodeIt const& end, IndexIt const& tbegin, IndexIt const& tend)
-          : _nodes(begin, end), _index_tags(tbegin, tend)
+          : _nodes{begin, end}, _index_tags{tbegin, tend}
         {}
 
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            path_render_impl(sink, _nodes, _index_tags, false);
+            path_iterate_impl(sink, _nodes, _index_tags, false);
         }
 
     private:
 
-        boost::iterator_range<NodeIt> _nodes;
-        boost::iterator_range<IndexIt> _index_tags;
+        iterator_range<NodeIt> _nodes;
+        iterator_range<IndexIt> _index_tags;
     };
 }}
 
