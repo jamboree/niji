@@ -8,10 +8,7 @@
 #define NIJI_VIEW_DETAIL_DASH_HPP_INCLUDED
 
 #include <cmath>
-#include <boost/assert.hpp>
-#include <boost/optional/optional.hpp>
 #include <niji/path.hpp>
-#include <niji/support/command.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/bezier.hpp>
@@ -30,7 +27,7 @@ namespace niji { namespace detail
         {
             using std::fmod;
             
-            BOOST_ASSERT(begin != end);
+            assert(begin != end);
 
             if (offset > 0)
             {
@@ -273,7 +270,7 @@ namespace niji { namespace detail
         template<class Sink>
         void flush(Sink& sink)
         {
-            _path.render(sink);
+            _path.iterate(sink);
             _path.clear();
         }
 

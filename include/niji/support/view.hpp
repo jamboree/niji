@@ -8,7 +8,7 @@
 #define NIJI_SUPPORT_VIEW_HPP_INCLUDED
 
 #include <type_traits>
-#include <niji/render.hpp>
+#include <niji/core.hpp>
 
 namespace niji
 {
@@ -22,15 +22,15 @@ namespace niji
         View view;
         
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            view.render(path, sink);
+            view.iterate(path, sink);
         }
         
         template<class Sink>
-        auto inverse_render(Sink& sink) const -> decltype(view.inverse_render(path, sink))
+        auto reverse_iterate(Sink& sink) const -> decltype(view.reverse_iterate(path, sink))
         {
-            return view.inverse_render(path, sink);
+            return view.reverse_iterate(path, sink);
         }
     };
 
@@ -52,18 +52,18 @@ namespace niji
         {}
 
         template<class Path, class Sink>
-        void render(Path const& path, Sink& sink) const
+        void iterate(Path const& path, Sink& sink) const
         {
-            niji::render(path | lhs | rhs, sink);
+            niji::iterate(path | lhs | rhs, sink);
         }
 
         template<class Path, class Sink>
-        void inverse_render(Path const& path, Sink& sink) const
+        void reverse_iterate(Path const& path, Sink& sink) const
         {
-            niji::inverse_render(path | lhs | rhs, sink);
+            niji::reverse_iterate(path | lhs | rhs, sink);
         }
     };
-
+#if 0
     namespace detail
     {
         template<class Derived>
@@ -76,7 +76,7 @@ namespace niji
     struct is_view
       : decltype(detail::is_view_test(std::declval<View>()))
     {};
-    
+#endif
     template<class Derived, class Path>
     inline path_adaptor<Path, Derived>
     operator|(Path&& path, view<Derived>&& d)

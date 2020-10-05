@@ -8,7 +8,7 @@
 #define NIJI_SUPPORT_NUMBERS_HPP_INCLUDED
 
 #include <numbers>
-
+#include <boost/math/constants/constants.hpp>
 namespace niji
 {
     struct constant_literal
@@ -26,6 +26,42 @@ namespace niji
 namespace niji::numbers
 {
     using namespace ::std::numbers;
+
+    template<class T>
+    constexpr T half_pi = "1.57079632679489661923132169163975144209858469968755291048747229615390820314310449931401741267105853399107404326e+00"_const;
+
+    template<>
+    constexpr double half_pi<double> = 1.570796326794896619231321691639751442e+00;
+
+    template<>
+    constexpr float half_pi<float> = static_cast<float>(half_pi<double>);
+
+    template<class T>
+    constexpr T two_pi = "6.28318530717958647692528676655900576839433879875021164194988918461563281257241799725606965068423413596429617303e+00"_const;
+
+    template<>
+    constexpr double two_pi<double> = 6.283185307179586476925286766559005768e+00;
+
+    template<>
+    constexpr float two_pi<float> = static_cast<float>(two_pi<double>);
+
+    template<class T>
+    constexpr T third = "3.33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333e-01"_const;
+
+    template<>
+    constexpr double third<double> = 3.333333333333333333333333333333333333e-01;
+
+    template<>
+    constexpr float third<float> = static_cast<float>(third<double>);
+
+    template<class T>
+    constexpr T one_div_root_two = "7.07106781186547524400844362104849039284835937688474036588339868995366239231053519425193767163820786367506923115e-01"_const;
+
+    template<>
+    constexpr double one_div_root_two<double> = 7.071067811865475244008443621048490392e-01;
+
+    template<>
+    constexpr float one_div_root_two<float> = static_cast<float>(one_div_root_two<double>);
 
     template<class T>
     constexpr T root_two = "1.41421356237309504880168872420969807856967187537694807317667973799073247846210703885038753432764157273501384623e+00"_const;

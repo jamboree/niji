@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2018 Jamboree
+    Copyright (c) 2018-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,12 +8,11 @@
 #define NIJI_VIEW_DETAIL_OFFSET_OUTLINE_HPP_INCLUDED
 
 #include <niji/path.hpp>
-#include <niji/support/command.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/bezier.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     // This is used for both stroke & offset.
     template<class T, class Joiner, bool DoInner = false>
@@ -142,7 +141,7 @@ namespace niji { namespace detail
             line_to(_first_pt);
             _join
             (
-                _outer, _inner, _prev_pt, _prev_normal, _first_normal
+                &_outer, DoInner ? &_inner : nullptr, _prev_pt, _prev_normal, _first_normal
                 , _r, _prev_is_line, curr_is_line
                 , std::min(_pre_magnitude, _first_magnitude)
             );
@@ -167,7 +166,7 @@ namespace niji { namespace detail
             {
                 _join
                 (
-                    _outer, _inner, _prev_pt, _prev_normal, normal
+                    &_outer, DoInner ? &_inner : nullptr, _prev_pt, _prev_normal, normal
                     , _r, _prev_is_line, curr_is_line
                     , std::min(_pre_magnitude, magnitude)
                 );
@@ -313,13 +312,13 @@ namespace niji { namespace detail
         void finish(Sink& sink, bool reversed)
         {
             if (reversed)
-                _outer.inverse_render(sink);
+                _outer.reverse_iterate(sink);
             else
-                _outer.render(sink);
+                _outer.iterate(sink);
             _outer.clear();
             _seg_count = 0;
         }
     };
-}}
+}
 
 #endif

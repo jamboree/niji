@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,11 +11,11 @@
 #include <niji/path.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/vector.hpp>
-#include <niji/support/constants.hpp>
+#include <niji/support/numbers.hpp>
 #include <niji/support/numeric.hpp>
 #include <niji/support/bezier.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T>
     inline
@@ -64,34 +64,37 @@ namespace niji { namespace detail
     
     template<class T>
     using join_style_fn = std::function<void(
-            path<point<T>>&, path<point<T>>&, point<T> const&
+            path<point<T>>*, path<point<T>>*, point<T> const&
           , vector<T> const&, vector<T> const&, T, bool, bool, T)>;
-}}
+}
 
-namespace niji { namespace join_styles
+namespace niji::join_styles
 {
     struct bevel
     {
         template<class T>
         void operator()
         (
-            path<point<T>>& outer, path<point<T>>& inner, point<T> const& pt
+            path<point<T>>* o, path<point<T>>* i, point<T> const& pt
           , vector<T> former_normal, vector<T> later_normal
           , T r, bool prev_is_line, bool curr_is_line, T magnitude
         ) const
         {
-            auto o = &outer, i = &inner;
             if (!vectors::is_ccw(former_normal, later_normal))
             {
-                o = &inner, i = &outer;
+                std::swap(o, i);
                 former_normal = -former_normal;
                 later_normal = -later_normal;
             }
+            if (o)
+            {
 #if defined(JAMBOREE)
-            o->join(pt + former_normal);
+                o->join(pt + former_normal);
 #endif
-            o->join(pt + later_normal);
-            detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
+                o->join(pt + later_normal);
+            }
+            if (i)
+                detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
         }
     };
 
@@ -100,16 +103,15 @@ namespace niji { namespace join_styles
         template<class T>
         void operator()
         (
-            path<point<T>>& outer, path<point<T>>& inner, point<T> const& pt
+            path<point<T>>* o, path<point<T>>* i, point<T> const& pt
           , vector<T> former_normal, vector<T> later_normal
           , T r, bool prev_is_line, bool curr_is_line, T magnitude
         ) const
         {
-            auto o = &outer, i = &inner;
             bool is_ccw = vectors::is_ccw(former_normal, later_normal);
             if (!is_ccw)
             {
-                o = &inner, i = &outer;
+                std::swap(o, i);
                 former_normal = -former_normal;
                 later_normal = -later_normal;
             }
@@ -124,17 +126,21 @@ namespace niji { namespace join_styles
             // ignore the 1st point which should be already in path
             auto it = pts + 1, end = bezier::build_cubic_arc(former_normal / r, later_normal / r, is_ccw, &affine, pts);
 #   endif
+            if (o)
+            {
 #   if defined(JAMBOREE)
-            o->join(*pts);
+                o->join(*pts);
 #   endif
 #   if defined(NIJI_NO_CUBIC_APPROX)
-            for ( ; it != end; it += 2)
-                o->unsafe_quad_to(*it, it[1]);
+                for (; it != end; it += 2)
+                    o->unsafe_quad_to(*it, it[1]);
 #   else
-            for ( ; it != end; it += 3)
-                o->unsafe_cubic_to(*it, it[1], it[2]);
+                for (; it != end; it += 3)
+                    o->unsafe_cubic_to(*it, it[1], it[2]);
 #   endif
-            detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
+            }
+            if (i)
+                detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
         }
     };
 
@@ -151,7 +157,7 @@ namespace niji { namespace join_styles
 
         void operator()
         (
-            path<point<T>>& outer, path<point<T>>& inner, point<T> const& pt
+            path<point<T>>* o, path<point<T>>* i, point<T> const& pt
           , vector<T> former_normal, vector<T> later_normal
           , T r, bool prev_is_line, bool curr_is_line, T magnitude
         ) const
@@ -165,24 +171,27 @@ namespace niji { namespace join_styles
                 return;
             
             vector<T> mid;
-            auto o = &outer, i = &inner;
             auto do_miter = [&](bool do_miter)
             {
-#if defined(JAMBOREE)
-                o->join(pt + former_normal);
-#endif
-                switch (do_miter)
+                if (o)
                 {
-                case true:
-                    if (prev_is_line)
-                        o->back() = pt + mid;
-                    else
-                        o->join(pt + mid);
-                    if (!curr_is_line)
-                default: // do bevel
+#if defined(JAMBOREE)
+                    o->join(pt + former_normal);
+#endif
+                    switch (do_miter)
+                    {
+                    case true:
+                        if (prev_is_line)
+                            o->back() = pt + mid;
+                        else
+                            o->join(pt + mid);
+                        if (!curr_is_line)
+                    default: // do bevel
                         o->join(pt + later_normal);
+                    }
                 }
-                detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
+                if (i)
+                    detail::handle_inner_join(*i, pt, former_normal, later_normal, magnitude);
             };
             
             if (a == angle_type::nearly180)
@@ -191,7 +200,7 @@ namespace niji { namespace join_styles
             bool is_ccw = vectors::is_ccw(former_normal, later_normal);
             if (!is_ccw)
             {
-                o = &inner, i = &outer;
+                std::swap(o, i);
                 former_normal = -former_normal;
                 later_normal = -later_normal;
             }
@@ -201,7 +210,7 @@ namespace niji { namespace join_styles
             // (common case for stroking rectangles). If so, special case
             // that (for speed an accuracy).
             // Note: we only need to check one normal if dot==0
-            if (0 == dot && inv_limit <= constants::one_div_root_two<T>())
+            if (0 == dot && inv_limit <= numbers::one_div_root_two<T>)
             {
                 mid = former_normal + later_normal;
                 return do_miter(true);
@@ -216,7 +225,7 @@ namespace niji { namespace join_styles
             do_miter(true);
         }
     };
-}}
+}
 
 namespace niji
 {

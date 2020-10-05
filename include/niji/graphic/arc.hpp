@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,8 +7,6 @@
 #ifndef NIJI_GRAPHIC_ARC_HPP_INCLUDED
 #define NIJI_GRAPHIC_ARC_HPP_INCLUDED
 
-#include <niji/support/command.hpp>
-#include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/box.hpp>
@@ -20,7 +18,7 @@ namespace niji
     struct arc
     {
         using point_type = point<T>;
-        using box_type = niji::box<point_type>;
+        using box_type = niji::box<T>;
         
         box_type box;
         T start, sweep;
@@ -30,23 +28,21 @@ namespace niji
         {}
         
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            render_impl(sink, start, start + sweep);
+            iterate_impl(sink, start, start + sweep);
         }
         
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void reverse_iterate(Sink& sink) const
         {
-            render_impl(sink, start + sweep, start);
+            iterate_impl(sink, start + sweep, start);
         }
         
     private:
-         
         template<class Sink>
-        void render_impl(Sink& sink, T start, T stop) const
+        void iterate_impl(Sink& sink, T start, T stop) const
         {
-            using namespace command;
             using std::sin;
             using std::cos;
 
@@ -58,17 +54,17 @@ namespace niji
 #   if defined(NIJI_NO_CUBIC_APPROX)
             point<T> pts[17];
             auto it = pts, end = bezier::build_quad_arc(u, v, stop > start, &affine, pts);
-            sink(move_to, *it++);
+            sink.move_to(*it++);
             for ( ; it != end; it += 2)
-                sink(quad_to, *it, it[1]);
+                sink.quad_to(*it, it[1]);
 #   else
             point<T> pts[13];
             auto it = pts, end = bezier::build_cubic_arc(u, v, stop > start, &affine, pts);
-            sink(move_to, *it++);
+            sink.move_to(*it++);
             for ( ; it != end; it += 3)
-                sink(cubic_to, *it, it[1], it[2]);
+                sink.cubic_to(*it, it[1], it[2]);
 #   endif
-            sink(end_open);
+            sink.end_open();
         }
     };
 }

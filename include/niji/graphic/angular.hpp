@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -9,10 +9,8 @@
 
 #include <array>
 #include <type_traits>
-#include <niji/support/command.hpp>
-#include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
-#include <niji/support/constants.hpp>
+#include <niji/support/numbers.hpp>
 
 namespace niji
 {
@@ -25,32 +23,30 @@ namespace niji
         using param_t = std::conditional_t<(N > 1), store_t const&, T>;
 
         point_type origin;
-        store_t r;
+        store_t radius;
         store_t theta; // To turn side up, use radian = PI / n
         unsigned n;
 
-        angular(std::size_t n, point_type const& pt, param_t r, param_t theta = {})
-          : origin(pt), r{r}, theta{theta}, n(n)
+        angular(unsigned n, point_type const& pt, param_t radius, param_t theta = {})
+          : origin(pt), radius{radius}, theta{theta}, n(n)
         {}
 
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            render_impl(sink, constants::two_pi<T>());
+            iterate_impl(sink, numbers::two_pi<T>);
         }
         
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void reverse_iterate(Sink& sink) const
         {
-            render_impl(sink, -constants::two_pi<T>());
+            iterate_impl(sink, -numbers::two_pi<T>);
         }
 
     private:
-
         template<class Sink>
-        void render_impl(Sink& sink, T da) const
+        void iterate_impl(Sink& sink, T da) const
         {
-            using namespace command;
             using std::sin;
             using std::cos;
 
@@ -61,16 +57,16 @@ namespace niji
 
             std::array<T, N> d(theta);
             for (T& di : d)
-                di += constants::half_pi<T>();
+                di += numbers::half_pi<T>;
 
             auto d1 = d[0];
-            auto r1 = r[0];
-            sink(move_to, point_type{origin.x + cos(d1) * r1, origin.y + sin(d1) * r1});
+            auto r1 = radius[0];
+            sink.move_to(point_type{origin.x + cos(d1) * r1, origin.y + sin(d1) * r1});
             for (std::size_t i = 0; i != N; ++i)
             {
                 auto di = d[i];
-                auto ri = r[i];
-                sink(line_to, point_type{origin.x + cos(di) * ri, origin.y + sin(di) * ri});
+                auto ri = radius[i];
+                sink.line_to(point_type{origin.x + cos(di) * ri, origin.y + sin(di) * ri});
             }
 
             auto fn = [&]
@@ -78,8 +74,8 @@ namespace niji
                 for (std::size_t i = 0; i != N; ++i)
                 {
                     auto di = d[i] += da;
-                    auto ri = r[i];
-                    sink(line_to, point_type{origin.x + cos(di) * ri, origin.y + sin(di) * ri});
+                    auto ri = radius[i];
+                    sink.line_to(point_type{origin.x + cos(di) * ri, origin.y + sin(di) * ri});
                 }
             };
 
@@ -94,7 +90,7 @@ namespace niji
             case 1: fn();
                 } while (i++ != k);
             }
-            sink(end_closed);
+            sink.end_closed();
         }
     };
 }

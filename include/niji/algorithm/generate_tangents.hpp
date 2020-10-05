@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2017 Jamboree
+    Copyright (c) 2017-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,13 +7,12 @@
 #ifndef NIJI_ALGORITHM_GENERATE_TANGENTS_HPP_INCLUDED
 #define NIJI_ALGORITHM_GENERATE_TANGENTS_HPP_INCLUDED
 
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
+#include <niji/core.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/bezier.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T, class F>
     struct tangents_sink
@@ -31,12 +30,12 @@ namespace niji { namespace detail
             _offset = _step - offset;
         }
 
-        void operator()(move_to_t, point_t const& pt)
+        void move_to(point_t const& pt)
         {
             _first_pt = _prev_pt = pt;
         }
 
-        void operator()(line_to_t, point_t const& pt)
+        void line_to(point_t const& pt)
         {
             vector_t v(pt - _prev_pt);
             T len(vectors::norm(v));
@@ -47,7 +46,7 @@ namespace niji { namespace detail
             _prev_pt = pt;
         }
 
-        void operator()(quad_to_t, point_t const& pt1, point_t const& pt2)
+        void quad_to(point_t const& pt1, point_t const& pt2)
         {
             point_t pts[3] = {_prev_pt, pt1, pt2};
             point_t chops[5];
@@ -64,7 +63,7 @@ namespace niji { namespace detail
             _prev_pt = pt2;
         }
 
-        void operator()(cubic_to_t, point_t const& pt1, point_t const& pt2, point_t const& pt3)
+        void cubic_to(point_t const& pt1, point_t const& pt2, point_t const& pt3)
         {
             point_t pts[4] = {_prev_pt, pt1, pt2, pt3};
             point_t chops[7];
@@ -81,11 +80,11 @@ namespace niji { namespace detail
             _prev_pt = pt3;
         }
         
-        void operator()(end_open_t) {}
+        void end_open() {}
 
-        void operator()(end_closed_t)
+        void end_closed()
         {
-            operator()(line_to_t{}, _first_pt);
+            line_to(_first_pt);
         }
         
     private:
@@ -117,7 +116,7 @@ namespace niji { namespace detail
         F& _f;
         point_t _prev_pt, _first_pt;
     };
-}}
+}
 
 namespace niji
 {
@@ -126,7 +125,7 @@ namespace niji
     {
         using coord_t = path_coordinate_t<Path>;
         detail::tangents_sink<coord_t, F> sink(step, offset, f);
-        niji::render(path, sink);
+        niji::iterate(path, sink);
     }
 }
 

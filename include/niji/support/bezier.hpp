@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,12 +11,11 @@
 #include <cmath>
 #include <cassert>
 #include <algorithm>
-#include <niji/support/traits.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/transform/affine.hpp>
 #include <niji/support/transform/rotate.hpp>
-#include <niji/support/constants.hpp>
+#include <niji/support/numbers.hpp>
 #include <niji/support/numeric.hpp>
 
 // N O T E
@@ -29,7 +28,7 @@
 #define NIJI_MAX_QUAD_SUBDIVIDE 5
 #define NIJI_MAX_CUBIC_SUBDIVIDE 7
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T>
     inline T poly_eval(T A, T B, T C, T t)
@@ -159,8 +158,8 @@ namespace niji { namespace detail
             T neg2RootQ = -2 * sqrt(Q);
     
             next_root(neg2RootQ * cos(theta / 3) - adiv3);
-            next_root(neg2RootQ * cos((theta + constants::two_pi<T>()) / 3) - adiv3);
-            next_root(neg2RootQ * cos((theta - constants::two_pi<T>()) / 3) - adiv3);
+            next_root(neg2RootQ * cos((theta + numbers::two_pi<T>) / 3) - adiv3);
+            next_root(neg2RootQ * cos((theta - numbers::two_pi<T>) / 3) - adiv3);
     
             // Now sort the roots.
             std::sort(tValues, roots);
@@ -169,7 +168,7 @@ namespace niji { namespace detail
         else // We have 1 real root.
         {
             T A = abs(R) + sqrt(R2MinusQ3);
-            A = pow(A, constants::third<T>());
+            A = pow(A, numbers::third<T>);
             if (R > 0)
                 A = -A;
             if (A != 0)
@@ -395,11 +394,9 @@ namespace niji { namespace detail
     {
         lg_t_table() : std::array<T, 3>
         {
-            NIJI_CONSTANTS(T,
-                (0.5)
-                (0.1127016653792583114820734600217600389168)
-                (0.8872983346207416885179265399782399610832)
-            )
+            T(0.5),
+            T(0.1127016653792583114820734600217600389168),
+            T(0.8872983346207416885179265399782399610832)
         } {}
     };
 
@@ -408,17 +405,15 @@ namespace niji { namespace detail
     {
         lg_t_table() : std::array<T, 4>
         {
-            NIJI_CONSTANTS(T,
-                (0.3300094782075718675986671204483776563998)
-                (0.6699905217924281324013328795516223436002)
-                (0.06943184420297371238802675555359524745215)
-                (0.9305681557970262876119732444464047525478)
-            )
+            T(0.3300094782075718675986671204483776563998),
+            T(0.6699905217924281324013328795516223436002),
+            T(0.06943184420297371238802675555359524745215),
+            T(0.9305681557970262876119732444464047525478)
         } {}
     };
 
     template<class T, int N>
-    lg_t_table<T, N> const lg_t = {};
+    inline lg_t_table<T, N> const lg_t = {};
 
     // Legendre-Gauss weights
     // (wi values, defined by a function linked to in the Bezier primer article)
@@ -430,11 +425,9 @@ namespace niji { namespace detail
     {
         lg_c_table() : std::array<T, 3>
         {
-            NIJI_CONSTANTS(T,
-                (0.8888888888888888888888888888888888888888)
-                (0.5555555555555555555555555555555555555555)
-                (0.5555555555555555555555555555555555555555)
-            )
+            T(0.8888888888888888888888888888888888888888),
+            T(0.5555555555555555555555555555555555555555),
+            T(0.5555555555555555555555555555555555555555)
         } {}
     };
 
@@ -443,23 +436,21 @@ namespace niji { namespace detail
     {
         lg_c_table() : std::array<T, 4>
         {
-            NIJI_CONSTANTS(T,
-                (0.6521451548625461426269360507780005927646)
-                (0.6521451548625461426269360507780005927646)
-                (0.3478548451374538573730639492219994072353)
-                (0.3478548451374538573730639492219994072353)
-            )
+            T(0.6521451548625461426269360507780005927646),
+            T(0.6521451548625461426269360507780005927646),
+            T(0.3478548451374538573730639492219994072353),
+            T(0.3478548451374538573730639492219994072353)
         } {}
     };
 
     template<class T, int N>
-    lg_c_table<T, N> const lg_c = {};
+    inline lg_c_table<T, N> const lg_c = {};
 
     template<class T>
     inline T length_impl(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
     {
-        lgq<T, 3> lgq(pt1, pt2, pt3);
-        T sum =
+        lgq<T, 3> const lgq(pt1, pt2, pt3);
+        T const sum =
             lg_c<T, 3>[0] * lgq(lg_t<T, 3>[0]) +
             lg_c<T, 3>[1] * lgq(lg_t<T, 3>[1]) +
             lg_c<T, 3>[2] * lgq(lg_t<T, 3>[2]);
@@ -469,8 +460,8 @@ namespace niji { namespace detail
     template<class T>
     inline T length_impl(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3, point<T> const& pt4)
     {
-        lgq<T, 4> lgq(pt1, pt2, pt3, pt4);
-        T sum =
+        lgq<T, 4> const lgq(pt1, pt2, pt3, pt4);
+        T const sum =
             lg_c<T, 4>[0] * lgq(lg_t<T, 4>[0]) +
             lg_c<T, 4>[1] * lgq(lg_t<T, 4>[1]) +
             lg_c<T, 4>[2] * lgq(lg_t<T, 4>[2]) +
@@ -531,17 +522,17 @@ namespace niji { namespace detail
           , point<T>(1, 0)
         } {}
     };
-}}
+}
 
-namespace niji { namespace bezier
+namespace niji::bezier
 {
     template<class T>
-    detail::quad_circle_points_table<T> const quad_circle_points =
-        {constants::tan_pi_over_8<T>(), constants::root2_over_2<T>()};
+    inline detail::quad_circle_points_table<T> const quad_circle_points =
+        {numbers::tan_pi_over_8<T>, numbers::root2_over_2<T>};
 
     template<class T>
-    detail::cubic_circle_points_table<T> const cubic_circle_points =
-        {constants::cubic_arc_factor<T>()};
+    inline detail::cubic_circle_points_table<T> const cubic_circle_points =
+        {numbers::cubic_arc_factor<T>};
     
     template<class T>
     inline T quad_length(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
@@ -1070,6 +1061,6 @@ namespace niji { namespace bezier
         }
         return t;
     }
-}}
+}
 
 #endif

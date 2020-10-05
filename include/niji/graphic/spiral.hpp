@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2018 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,10 +7,8 @@
 #ifndef NIJI_GRAPHIC_SPIRAL_HPP_INCLUDED
 #define NIJI_GRAPHIC_SPIRAL_HPP_INCLUDED
 
-#include <niji/support/command.hpp>
-#include <niji/support/traits.hpp>
 #include <niji/support/point.hpp>
-#include <niji/support/constants.hpp>
+#include <niji/support/numbers.hpp>
 
 namespace niji
 {
@@ -20,38 +18,35 @@ namespace niji
         using point_type = point<T>;
         
         point_type origin;
-        T r;
-        int n;
+        T radius;
+        int loop;
 
-        spiral(point_type const& pt, T r, int n)
-          : origin(pt), r(r), n(n)
+        spiral(point_type const& pt, T radius, int loop)
+          : origin(pt), radius(radius), loop(loop)
         {}
 
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            render_impl(sink, origin, r, n);
+            iterate_impl(sink, origin, radius, loop);
         }
         
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void reverse_iterate(Sink& sink) const
         {
-            render(sink);
+            iterate(sink);
         }
         
     private:
-         
         template<class Sink>
-        static void render_impl(Sink& sink, point_type const& o, T r, int n)
+        static void iterate_impl(Sink& sink, point_type const& o, T r, int n)
         {
-            using namespace command;
-
-            sink(move_to, o);
+            sink.move_to(o);
 #   if defined(NIJI_NO_CUBIC_APPROX)
             r /= 16;
             
-            T ds = r * constants::tan_pi_over_8<T>(),
-              dm = r * constants::root2_over_2<T>(),
+            T ds = r * numbers::tan_pi_over_8<T>,
+              dm = r * numbers::root2_over_2<T>,
               dr = r, s = ds, m = dm;
 
             point_type pt;
@@ -62,7 +57,7 @@ namespace niji
             };
             auto q2 = [&](T x, T y)
             {
-                sink(quad_to, o + pt, point_type{o.x + x, o.y + y});
+                sink.quad_to(o + pt, point_type{o.x + x, o.y + y});
                 r += dr, s += ds, m += dm;
             };
             for (int i = 0; i != n; ++i)
@@ -79,7 +74,7 @@ namespace niji
 #   else
             r /= 12; // the angle is near pi/6
             
-            T ds = r * constants::cubic_arc_factor<T>(),
+            T ds = r * numbers::cubic_arc_factor<T>,
               dr = r, s = ds;
 
             point_type pt1, pt2;
@@ -95,7 +90,7 @@ namespace niji
             };
             auto c3 = [&](T x, T y)
             {
-                sink(cubic_to, o + pt1, o + pt2, point_type{o.x + x, o.y + y});
+                sink.cubic_to(o + pt1, o + pt2, point_type{o.x + x, o.y + y});
                 r += dr, s += ds;
             };
             for (int i = 0; i != n; ++i)
@@ -106,7 +101,7 @@ namespace niji
                 c1(s, -r), c2(r, -s), c3(r, 0);
             }
 #   endif
-            sink(end_open);
+            sink.end_open();
         }
     };
 }

@@ -188,15 +188,13 @@ namespace niji
     }
 
     template<class T>
-    struct radius1
+    struct radius1 : radius<T>
     {
-        T value;
+        using radius<T>::radius;
 
-        radius1(T value) : value(value) {}
-
-        point<T> operator[](std::size_t) const
+        point<T> const& operator[](std::size_t) const
         {
-            return point<T>(value, value);
+            return *this;
         }
     };
 
@@ -234,7 +232,6 @@ namespace niji
         }
         
     private:
-         
         template<class Sink, class RadiusView>
         static void iterate_impl
         (

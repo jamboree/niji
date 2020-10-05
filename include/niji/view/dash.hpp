@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2019 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,8 +8,6 @@
 #define NIJI_VIEW_DASH_HPP_INCLUDED
 
 #include <type_traits>
-#include <boost/assert.hpp>
-#include <boost/range/iterator.hpp>
 #include <niji/support/view.hpp>
 #include <niji/support/just.hpp>
 #include <niji/support/numeric.hpp>
@@ -30,38 +28,37 @@ namespace niji
         template<class Sink>
         struct adaptor
         {
-            void operator()(move_to_t, point<T> const& pt)
+            void move_to(point<T> const& pt)
             {
                 _dasher.move_to(pt);
             }
     
-            void operator()(line_to_t, point<T> const& pt)
+            void line_to(point<T> const& pt)
             {
                 _dasher.line_to(pt, _sink);
             }
     
-            void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
+            void quad_to(point<T> const& pt1, point<T> const& pt2)
             {
                 _dasher.quad_to(pt1, pt2, _sink);
             }
     
-            void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
+            void cubic_to(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
             {
                 _dasher.cubic_to(pt1, pt2, pt3, _sink);
             }
     
-            void operator()(end_closed_t)
+            void end_closed()
             {
                 _dasher.close(_sink);
             }
     
-            void operator()(end_open_t)
+            void end_open()
             {
                 _dasher.cut(_sink);
             }
             
-            using iterator_t = typename
-                boost::range_iterator<std::remove_reference_t<Pattern> const>::type;
+            using iterator_t = typename std::decay_t<Pattern>::const_iterator;
     
             Sink& _sink;
             detail::dasher<T, U, iterator_t> _dasher;
@@ -75,28 +72,28 @@ namespace niji
         {}
 
         template<class Path, class Sink>
-        void render(Path const& path, Sink& sink) const
+        void iterate(Path const& path, Sink& sink) const
         {
             auto i = std::begin(pattern), e = std::end(pattern);
             if (i != e)
-                niji::render(path, adaptor<Sink>{sink, {i, e, offset, weight}});
+                niji::iterate(path, adaptor<Sink>{sink, {i, e, offset, weight}});
         }
         
         template<class Path, class Sink>
-        void inverse_render(Path const& path, Sink& sink) const
+        void reverse_iterate(Path const& path, Sink& sink) const
         {
-            render(path, sink);
+            iterate(path, sink);
         }
     };
 }
 
-namespace niji { namespace views
+namespace niji::views
 {
     template<class T, class Pattern = std::initializer_list<T> const&, class U = numeric::one>
     inline auto dash(Pattern&& p, just_t<T> offset = {}, U weight = {})
     {
         return dash_view<T, Pattern, U>{std::forward<Pattern>(p), offset, weight};
     }
-}}
+}
 
 #endif

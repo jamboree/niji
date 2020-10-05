@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,8 +7,6 @@
 #ifndef NIJI_GRAPHIC_CROSS_HPP_INCLUDED
 #define NIJI_GRAPHIC_CROSS_HPP_INCLUDED
 
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
 #include <niji/support/point.hpp>
 
 namespace niji
@@ -19,28 +17,27 @@ namespace niji
         using point_type = point<T>;
 
         point_type center;
-        T r;
+        T radius;
 
-        cross(point_type const& center, T r) : center(center), r(r) {}
+        cross(point_type const& center, T radius) : center(center), radius(radius) {}
 
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
             auto line = [&](vector<T> v)
             {
-                using namespace command;
-                sink(move_to, center - v);
-                sink(line_to, center + v);
-                sink(end_open);
+                sink.move_to(center - v);
+                sink.line_to(center + v);
+                sink.end_open();
             };
-            line({r, 0});
-            line({0, r});
+            line({radius, 0});
+            line({0, radius});
         }
 
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void reverse_iterate(Sink& sink) const
         {
-            render(sink);
+            iterate(sink);
         }
     };
 }

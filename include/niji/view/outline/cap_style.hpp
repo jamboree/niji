@@ -13,14 +13,14 @@
 #include <niji/support/vector.hpp>
 #include <niji/support/bezier.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T>
     using cap_style_fn = std::function<void(
             path<point<T>>&, point<T> const&, vector<T> const&, bool)>;
-}}
+}
 
-namespace niji { namespace cap_styles
+namespace niji::cap_styles
 {
     struct butt
     {
@@ -83,7 +83,7 @@ namespace niji { namespace cap_styles
             path.unsafe_quad_to(f(-1, s), f(-1, 0));
 #   else
             vector<T> v(vectors::normal_ccw(normal))
-                    , s(normal * constants::cubic_arc_factor<T>())
+                    , s(normal * numbers::cubic_arc_factor<T>)
                     , sn(vectors::normal_ccw(s));
             point<T> pt1(pt + normal), pt2(pt + v), pt3(pt - normal);
             path.join(pt1);
@@ -92,7 +92,7 @@ namespace niji { namespace cap_styles
 #   endif
         }
     };
-}}
+}
 
 namespace niji
 {

@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2017 Jamboree
+    Copyright (c) 2017-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -9,7 +9,6 @@
 
 #include <tuple>
 #include <type_traits>
-#include <niji/render.hpp>
 #include <niji/support/view.hpp>
 
 namespace niji
@@ -26,35 +25,33 @@ namespace niji
         {}
 
         template<class Path, class Sink>
-        void render(Path const& path, Sink& sink) const
+        void iterate(Path const& path, Sink& sink) const
         {
-            render_impl(niji::render, path, sink, indices_t{});
+            iterate_impl(niji::iterate, path, sink, indices_t{});
         }
 
         template<class Path, class Sink>
-        void inverse_render(Path const& path, Sink& sink) const
+        void reverse_iterate(Path const& path, Sink& sink) const
         {
-            render_impl(niji::inverse_render, path, sink, indices_t{});
+            iterate_impl(niji::reverse_iterate, path, sink, indices_t{});
         }
 
     private:
         template<class F, class Path, class Sink, std::size_t... I>
-        void render_impl(F f, Path const& path, Sink& sink, std::index_sequence<I...>) const
+        void iterate_impl(F f, Path const& path, Sink& sink, std::index_sequence<I...>) const
         {
-            f(path, sink);
-            bool _[] = {(f(path | std::get<I>(branches), sink), true)...};
-            (void)_;
+            (f(path | std::get<I>(branches), sink), ...);
         }
     };
 }
 
-namespace niji { namespace views
+namespace niji::views
 {
     template<class... Views>
     inline fork_view<Views...> fork(Views&&... branches)
     {
         return {std::forward<Views>(branches)...};
     }
-}}
+}
 
 #endif

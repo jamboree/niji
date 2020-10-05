@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2017-2018 Jamboree
+    Copyright (c) 2017-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -31,38 +31,38 @@ namespace niji
         {}
 
         template<class Path, class Sink>
-        void render(Path const& path, Sink& sink) const
+        void iterate(Path const& path, Sink& sink) const
         {
             using coord_t = path_coordinate_t<Path>;
             using point_t = point<T>;
             using vector_t = vector<T>;
             generate_tangents(path, step, offset, [&](point_t const& pt, vector_t const& u)
             {
-                niji::render(footprint | views::rotate<coord_t>(u.y, u.x) | views::translate<coord_t>(pt), sink);
+                niji::iterate(footprint | views::rotate<coord_t>(u.y, u.x) | views::translate<coord_t>(pt), sink);
             });
         }
 
         template<class Path, class Sink>
-        void inverse_render(Path const& path, Sink& sink) const
+        void reverse_iterate(Path const& path, Sink& sink) const
         {
             using coord_t = path_coordinate_t<Path>;
             using point_t = point<T>;
             using vector_t = vector<T>;
             generate_tangents(path, step, offset, [&](point_t const& pt, vector_t const& u)
             {
-                niji::inverse_render(footprint | views::rotate<coord_t>(u.y, u.x) | views::translate<coord_t>(pt), sink);
+                niji::reverse_iterate(footprint | views::rotate<coord_t>(u.y, u.x) | views::translate<coord_t>(pt), sink);
             });
         }
     };
 }
 
-namespace niji { namespace views
+namespace niji::views
 {
     template<class T, class Footprint>
     inline trace_view<T, Footprint> trace(Footprint&& footprint, just_t<T> step, T offset = {})
     {
         return {std::forward<Footprint>(footprint), step, offset};
     }
-}}
+}
 
 #endif

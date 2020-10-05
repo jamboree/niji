@@ -43,19 +43,12 @@ namespace niji
 
         T x, y;
         
-        point() : x(), y() {}
+        constexpr point() : x(), y() {}
 
-        point(T x, T y) : x(x), y(y) {}
+        constexpr point(T x, T y) : x(x), y(y) {}
 
         template<class U>
-        explicit(is_narrowing_v<U, T>) point(point<U> const& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
-        
-#if 0
-        template<class Point, std::enable_if_t<is_point<Point>::value, bool> = true>
-        point(Point const& other)
-          : x(boost::geometry::get<0>(other)), y(boost::geometry::get<1>(other))
-        {}
-#endif
+        constexpr explicit(is_narrowing_v<U, T>) point(point<U> const& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
 
         void reset(T x2, T y2)
         {
@@ -177,6 +170,21 @@ namespace niji
     using ipoint = point<int>;
     using fpoint = point<float>;
     using dpoint = point<double>;
+
+    template<class T>
+    struct radius : point<T>
+    {
+        using point<T>::point;
+
+        radius(T value) : point<T>(value, value) {}
+
+        radius& operator=(T value)
+        {
+            this->x = value;
+            this->xy = value;
+            return *this;
+        }
+    };
 }
 
 namespace niji::points

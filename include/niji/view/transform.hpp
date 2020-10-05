@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -24,40 +24,57 @@ namespace niji
         transform_view(F&& f) : F(std::move(f)) {}
         transform_view(F const& f) : F(f) {}
 
-        template<class Sink>
+        template<class Sink, class Point>
         struct adaptor
         {
-            template<class Tag, class... Points>
-            void operator()(Tag tag, Points const&... pts) const
+            void move_to(Point const& pt)
             {
-                _sink(tag, _f(pts)...);
+                _sink.move_to(_f(pt));
             }
+
+            void line_to(Point const& pt)
+            {
+                _sink.line_to(_f(pt));
+            }
+
+            void quad_to(Point const& pt1, Point const& pt2)
+            {
+                _sink.quad_to(_f(pt1), _f(pt2));
+            }
+
+            void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3)
+            {
+                _sink.cubic_to(_f(pt1), _f(pt2), _f(pt3));
+            }
+
+            void end_closed() { _sink.end_closed(); }
+            void end_open() { _sink.end_open(); }
 
             Sink& _sink;
             F const& _f;
         };
 
         template<class Path, class Sink>
-        void render(Path const& path, Sink& sink) const
+        void iterate(Path const& path, Sink& sink) const
         {
-            niji::render(path, adaptor<Sink>{sink, *this});
+            niji::iterate(path, adaptor<Sink, path_point_t<Path>>{sink, *this});
         }
 
         template<class Path, class Sink>
-        void inverse_render(Path const& path, Sink& sink) const
+        void reverse_iterate(Path const& path, Sink& sink) const
         {
-            niji::inverse_render(path, adaptor<Sink>{sink, *this});
+            niji::reverse_iterate(path, adaptor<Sink, path_point_t<Path>>{sink, *this});
         }
     };
 }
 
-namespace niji { namespace views
+namespace niji::views
 {
     template<class F>
     inline auto transform(F&& f)
     {
         return transform_view<std::decay_t<F>>{std::forward<F>(f)};
     }
-}}
+}
 
 #endif

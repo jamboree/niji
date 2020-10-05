@@ -26,7 +26,7 @@ namespace niji
         }
 
         template<class Point>
-        void move_to(Point const& pt1)
+        void move_to(Point const& pt1) const
         {
             out << "move_to";
             print(pt1);
@@ -34,7 +34,7 @@ namespace niji
         }
 
         template<class Point>
-        void line_to(Point const& pt1)
+        void line_to(Point const& pt1) const
         {
             out << "line_to";
             print(pt1);
@@ -42,7 +42,7 @@ namespace niji
         }
 
         template<class Point>
-        void quad_to(Point const& pt1, Point const& pt2)
+        void quad_to(Point const& pt1, Point const& pt2) const
         {
             out << "quad_to";
             print(pt1), print(pt2);
@@ -50,19 +50,19 @@ namespace niji
         }
         
         template<class Point>
-        void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3)
+        void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3) const
         {
             out << "cubic_to";
             print(pt1), print(pt2), print(pt3);
             out << '\n';
         }
  
-        void end_open()
+        void end_open() const
         {
             out << "end_open\n";
         }
 
-        void end_closed()
+        void end_closed() const
         {
             out << "end_closed\n";
         }

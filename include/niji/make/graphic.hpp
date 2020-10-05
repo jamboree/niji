@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2017-2018 Jamboree
+    Copyright (c) 2017-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,20 +20,20 @@ namespace niji
 
         // Either one of the 2 overloads should be viable.
         template<class Sink>
-        auto render(Sink& sink) const -> decltype(f(sink, std::false_type{}))
+        auto iterate(Sink& sink) const -> decltype(f(sink, std::false_type{}))
         {
             f(sink, std::false_type{});
         }
 
         template<class Sink>
-        auto render(Sink& sink) const -> decltype(f(sink))
+        auto iterate(Sink& sink) const -> decltype(f(sink))
         {
             f(sink);
         }
 
         // May be disabled.
         template<class Sink>
-        auto inverse_render(Sink& sink) const -> decltype(f(sink, std::true_type{}))
+        auto reverse_iterate(Sink& sink) const -> decltype(f(sink, std::true_type{}))
         {
             f(sink, std::true_type{});
         }

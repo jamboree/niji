@@ -11,7 +11,6 @@
 #include <niji/support/point.hpp>
 #include <niji/support/numbers.hpp>
 #include <niji/support/numeric.hpp>
-#include <boost/math/constants/constants.hpp>
 
 namespace niji
 {

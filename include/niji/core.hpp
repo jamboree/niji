@@ -11,7 +11,16 @@
 
 namespace niji::detail
 {
-    struct dummy_sink {};
+    template<class Point>
+    struct dummy_sink
+    {
+        void move_to(Point const& pt);
+        void line_to(Point const& pt);
+        void quad_to(Point const& pt1, Point const& pt2);
+        void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3);
+        void end_closed();
+        void end_open();
+    };
 };
 
 namespace niji
@@ -42,13 +51,13 @@ namespace niji
     };
 
     template<class T>
-    concept Iteratable = requires(T const& self, detail::dummy_sink sink)
+    concept Iteratable = requires(T const& self, detail::dummy_sink<typename T::point_type> sink)
     {
         self.iterate(sink);
     };
 
     template<class T>
-    concept ReverseIteratable = Iteratable<T> && requires(T const& self, detail::dummy_sink sink)
+    concept ReverseIteratable = Iteratable<T> && requires(T const& self, detail::dummy_sink<typename T::point_type> sink)
     {
         self.reverse_iterate(sink);
     };
@@ -56,6 +65,8 @@ namespace niji
     template<Iteratable T>
     struct impl_path<T>
     {
+        using point_type = typename T::point_type;
+
         template<class Sink>
         static void iterate(T const& self, Sink& sink)
         {
