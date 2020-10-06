@@ -46,13 +46,13 @@ namespace niji
             off.offset(border, border);
             if (orient)
             {
-                niji::iterate(off, sink);
-                niji::reverse_iterate(box, sink);
+                off.iterate(sink);
+                box.reverse_iterate(sink);
             }
             else
             {
-                niji::iterate(box, sink);
-                niji::reverse_iterate(off, sink);
+                box.iterate(sink);
+                off.reverse_iterate(sink);
             }
         }
     };

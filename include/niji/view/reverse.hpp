@@ -13,14 +13,14 @@ namespace niji
 {
     struct reverse_view : view<reverse_view>
     {
-        template<class Path, class Sink>
-        static void iterate(Path const& path, Sink& sink)
+        template<BiPath P, class Sink>
+        static void iterate(P const& path, Sink& sink)
         {
              niji::reverse_iterate(path, sink);
         }
                 
-        template<class Path, class Sink>
-        static void reverse_iterate(Path const& path, Sink& sink)
+        template<Path P, class Sink>
+        static void reverse_iterate(P const& path, Sink& sink)
         {
              niji::iterate(path, sink);
         }

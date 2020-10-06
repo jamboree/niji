@@ -30,13 +30,7 @@ namespace niji
         {
             iterate_impl(sink, origin, radius, loop);
         }
-        
-        template<class Sink>
-        void reverse_iterate(Sink& sink) const
-        {
-            iterate(sink);
-        }
-        
+
     private:
         template<class Sink>
         static void iterate_impl(Sink& sink, point_type const& o, T r, int n)

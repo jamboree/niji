@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -38,7 +38,7 @@ namespace niji
     struct view
     {
         template<class Path>
-        using point_type = typename path_point<Path>::type;
+        using point_type = path_point_t<Path>;
     };
 
     template<class LHS, class RHS>
@@ -77,14 +77,14 @@ namespace niji
       : decltype(detail::is_view_test(std::declval<View>()))
     {};
 #endif
-    template<class Derived, class Path>
+    template<class Path, class Derived>
     inline path_adaptor<Path, Derived>
     operator|(Path&& path, view<Derived>&& d)
     {
         return {std::forward<Path>(path), static_cast<Derived&&>(d)};
     }
     
-    template<class Derived, class Path>
+    template<class Path, class Derived>
     inline path_adaptor<Path, Derived const&>
     operator|(Path&& path, view<Derived> const& d)
     {

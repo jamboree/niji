@@ -61,16 +61,16 @@ namespace niji
 
         explicit tee_view(RedirectSink& sink) noexcept : sink(sink) {}
 
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink_) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink_) const
         {
-            niji::iterate(path, adaptor<Sink, path_point_t<Path>>{sink, sink_});
+            niji::iterate(path, adaptor<Sink, path_point_t<P>>{sink, sink_});
         }
 
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink_) const
+        template<BiPath P, class Sink>
+        void reverse_iterate(P const& path, Sink& sink_) const
         {
-            niji::reverse_iterate(path, adaptor<Sink, path_point_t<Path>>{sink, sink_});
+            niji::reverse_iterate(path, adaptor<Sink, path_point_t<P>>{sink, sink_});
         }
     };
 }

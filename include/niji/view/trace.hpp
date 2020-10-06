@@ -29,8 +29,8 @@ namespace niji
           : footprint(std::forward<Footprint>(footprint)), steps(std::forward<Range>(steps))
         {}
 
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink) const
         {
             using coord_t = path_coordinate_t<Path>;
             using point_t = point<T>;
@@ -41,8 +41,8 @@ namespace niji
             });
         }
 
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void reverse_iterate(P const& path, Sink& sink) const
         {
             using coord_t = path_coordinate_t<Path>;
             using point_t = point<T>;

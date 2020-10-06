@@ -33,12 +33,6 @@ namespace niji
             line({radius, 0});
             line({0, radius});
         }
-
-        template<class Sink>
-        void reverse_iterate(Sink& sink) const
-        {
-            iterate(sink);
-        }
     };
 }
 

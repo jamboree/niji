@@ -71,18 +71,14 @@ namespace niji
           , offset(offset), weight(weight)
         {}
 
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink) const
         {
-            auto i = std::begin(pattern), e = std::end(pattern);
+            using std::begin;
+            using std::end;
+            auto i = begin(pattern), e = end(pattern);
             if (i != e)
                 niji::iterate(path, adaptor<Sink>{sink, {i, e, offset, weight}});
-        }
-        
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink) const
-        {
-            iterate(path, sink);
         }
     };
 }

@@ -47,14 +47,14 @@ namespace niji
         template<class Path>
         using point_type = point<path_coordinate_t<Path>>;
 
-        template<class Path, class Sink>
-        static void iterate(Path const& path, Sink& sink)
+        template<Path P, class Sink>
+        static void iterate(P const& path, Sink& sink)
         {
              iterate_impl(path, sink);
         }
         
-        template<class Path, class Sink>
-        static void reverse_iterate(Path const& path, Sink& sink)
+        template<BiPath P, class Sink>
+        static void reverse_iterate(P const& path, Sink& sink)
         {
              iterate_impl(path | views::reverse, sink);
         }

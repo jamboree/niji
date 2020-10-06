@@ -28,14 +28,14 @@ namespace niji
           : n(n), v(v)
         {}
    
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink) const
         {
              iterate_impl(path, sink, n, v.x, v.y, views::identity);
         }
   
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink) const
+        template<BiPath P, class Sink>
+        void reverse_iterate(P const& path, Sink& sink) const
         {
              iterate_impl(path, sink, n, v.x, v.y, views::reverse);
         }

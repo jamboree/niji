@@ -74,16 +74,16 @@ namespace niji
             bool _reversed;
         };
         
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink) const
         {
             using adaptor_t = adaptor<Sink>;
             if (radius)
                 niji::iterate(path, adaptor_t{sink, {radius, joiner, capper}, false});
         }
 
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void reverse_iterate(P const& path, Sink& sink) const
         {
             using adaptor_t = adaptor<Sink>;
             if (radius)

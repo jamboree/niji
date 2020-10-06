@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +13,7 @@
 #include <niji/support/vector.hpp>
 #include <niji/support/bezier.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T, class U, class Iterator>
     struct dasher
@@ -128,7 +128,7 @@ namespace niji { namespace detail
             switch (_skip)
             {
             default:
-                for ( ; ; )
+                for (;;)
                 {
                     sum += _weight * (*_it);
                     if (sum >= len)
@@ -282,6 +282,6 @@ namespace niji { namespace detail
         U _weight;
         bool _skip, _gap;
     };
-}}
+}
 
 #endif

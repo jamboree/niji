@@ -54,16 +54,16 @@ namespace niji
             F const& _f;
         };
 
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink) const
         {
-            niji::iterate(path, adaptor<Sink, path_point_t<Path>>{sink, *this});
+            niji::iterate(path, adaptor<Sink, path_point_t<P>>{sink, *this});
         }
 
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink) const
+        template<BiPath P, class Sink>
+        void reverse_iterate(P const& path, Sink& sink) const
         {
-            niji::reverse_iterate(path, adaptor<Sink, path_point_t<Path>>{sink, *this});
+            niji::reverse_iterate(path, adaptor<Sink, path_point_t<P>>{sink, *this});
         }
     };
 }
