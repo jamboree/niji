@@ -16,18 +16,17 @@
 
 namespace niji
 {
-    template<class T, class Footprint>
-    struct trace_view : view<trace_view<T, Footprint>>
+    template<class T, class Footprint, class Range>
+    struct trace_view : view<trace_view<T, Footprint, Range>>
     {
         template<class Path>
         using point_type = point<T>;
 
         Footprint footprint;
-        T step;
-        T offset;
+        Range steps;
 
-        trace_view(Footprint footprint, T step, T offset = {})
-          : footprint(std::forward<Footprint>(footprint)), step(step), offset(offset)
+        trace_view(Footprint footprint, Range steps)
+          : footprint(std::forward<Footprint>(footprint)), steps(std::forward<Range>(steps))
         {}
 
         template<class Path, class Sink>
@@ -36,7 +35,7 @@ namespace niji
             using coord_t = path_coordinate_t<Path>;
             using point_t = point<T>;
             using vector_t = vector<T>;
-            generate_tangents(path, step, offset, [&](point_t const& pt, vector_t const& u)
+            generate_tangents(path, steps, [&](point_t const& pt, vector_t const& u)
             {
                 niji::iterate(footprint | views::rotate<coord_t>(u.y, u.x) | views::translate<coord_t>(pt), sink);
             });
@@ -48,7 +47,7 @@ namespace niji
             using coord_t = path_coordinate_t<Path>;
             using point_t = point<T>;
             using vector_t = vector<T>;
-            generate_tangents(path, step, offset, [&](point_t const& pt, vector_t const& u)
+            generate_tangents(path, steps, [&](point_t const& pt, vector_t const& u)
             {
                 niji::reverse_iterate(footprint | views::rotate<coord_t>(u.y, u.x) | views::translate<coord_t>(pt), sink);
             });
@@ -58,10 +57,10 @@ namespace niji
 
 namespace niji::views
 {
-    template<class T, class Footprint>
-    inline trace_view<T, Footprint> trace(Footprint&& footprint, just_t<T> step, T offset = {})
+    template<class T, class Footprint, class Range>
+    inline trace_view<T, Footprint, Range> trace(Footprint&& footprint, Range&& steps)
     {
-        return {std::forward<Footprint>(footprint), step, offset};
+        return {std::forward<Footprint>(footprint), std::forward<Range>(steps)};
     }
 }
 
