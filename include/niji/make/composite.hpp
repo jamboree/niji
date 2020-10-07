@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -9,8 +9,7 @@
 
 #include <tuple>
 #include <type_traits>
-#include <niji/render.hpp>
-#include <niji/support/common_point.hpp>
+#include <niji/core.hpp>
 
 namespace niji
 {
@@ -18,7 +17,7 @@ namespace niji
     struct composite_path
     {
         using point_type =
-            common_point_t<path_point_t<std::decay_t<Paths>>...>;
+            std::common_type_t<path_point_t<std::decay_t<Paths>>...>;
 
         using unpack_sequence = std::make_index_sequence<sizeof...(Paths)>;
 
@@ -27,29 +26,22 @@ namespace niji
         {}
 
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
-            for_each([&sink](auto const& path)
-            {
-                niji::render(path, sink);
-            }, unpack_sequence{});
+            iterate_impl(niji::iterate, sink, unpack_sequence{});
         }
         
-        template<class Sink>
-        void inverse_render(Sink& sink) const
+        template<class Sink> requires (BiPath<std::decay_t<Paths>> && ...)
+        void reverse_iterate(Sink& sink) const
         {
-            for_each([&sink](auto const& path)
-            {
-                niji::inverse_render(path, sink);
-            }, unpack_sequence{});
+            iterate_impl(niji::reverse_iterate, sink, unpack_sequence{});
         }
 
     private:
-
-        template<class F, std::size_t... N>
-        void for_each(F&& f, std::integer_sequence<std::size_t, N...>) const
+        template<class F, class Sink, std::size_t... N>
+        void iterate_impl(F f, Sink& sink, std::integer_sequence<std::size_t, N...>) const
         {
-            std::initializer_list<bool>{(f(std::get<N>(paths)), true)...};
+            (f(std::get<N>(paths), sink), ...);
         }
 
         std::tuple<Paths...> paths;
