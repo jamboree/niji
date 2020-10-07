@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,15 +11,12 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
-#include <boost/optional/optional.hpp>
-#include <boost/geometry/core/access.hpp>
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
+#include <niji/core.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/transform/affine.hpp>
 #include <niji/sink/svg.hpp>
 
-namespace niji { namespace svg
+namespace niji::svg
 {
     struct rgb
     {
@@ -163,7 +160,7 @@ namespace niji { namespace svg
         void draw(Path const& path)
         {
             out << "<path d=\"";
-            render(path, basic_svg_sink<Ostream>(out));
+            iterate(path, basic_svg_sink<Ostream>(out));
             out << "\" " << _brush << ' ' << _pen << " />";
         }
 
@@ -198,12 +195,11 @@ namespace niji { namespace svg
         }
         
     private:
-        
         std::string _brush;
         std::string _pen;
     };
     
     using canvas = basic_canvas<std::ostream>;
-}}
+}
 
 #endif

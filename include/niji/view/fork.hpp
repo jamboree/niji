@@ -24,14 +24,14 @@ namespace niji
           : branches(std::forward<Views>(branches)...)
         {}
 
-        template<class Path, class Sink>
-        void iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void iterate(P const& path, Sink& sink) const
         {
             iterate_impl(niji::iterate, path, sink, indices_t{});
         }
 
-        template<class Path, class Sink>
-        void reverse_iterate(Path const& path, Sink& sink) const
+        template<Path P, class Sink>
+        void reverse_iterate(P const& path, Sink& sink) const requires (BiPath<std::decay_t<decltype(path | std::declval<Views>())>> && ...)
         {
             iterate_impl(niji::reverse_iterate, path, sink, indices_t{});
         }

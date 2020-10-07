@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,51 +13,55 @@
 
 struct skeleton_view : niji::view<skeleton_view>
 {
-    template<class Sink>
+    template<class Sink, class Point>
     struct adaptor
     {
         Sink& sink;
 
-        template<class Tag, class Point>
-        void operator()(Tag tag, Point const& pt) const
+        void move_to(Point const& pt)
         {
-            sink(tag, pt);
+            sink.move_to(pt);
         }
-    
-        template<class Point>
-        void operator()(niji::quad_to_t, Point const& pt1, Point const& pt2) const
+
+        void line_to(Point const& pt)
         {
-            using namespace niji::command;
-            sink(line_to, pt1);
-            sink(line_to, pt2);
+            sink.line_to(pt);
         }
-    
-        template<class Point>
-        void operator()(niji::cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3) const
+
+        void quad_to(Point const& pt1, Point const& pt2) const
         {
-            using namespace niji::command;
-            sink(line_to, pt1);
-            sink(line_to, pt2);
-            sink(line_to, pt3);
+            sink.line_to(pt1);
+            sink.line_to(pt2);
         }
-        
-        template<class Tag>
-        void operator()(Tag tag) const
+
+        void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3) const
         {
-            sink(tag);
+            sink.line_to(pt1);
+            sink.line_to(pt2);
+            sink.line_to(pt3);
+        }
+
+        void end_open()
+        {
+            sink.end_open();
+        }
+
+        void end_closed()
+        {
+            sink.end_closed();
         }
     };
-    
-    template<class Path, class Sink>
-    void render(Path const& path, Sink& sink) const
+
+    template<niji::Path P, class Sink>
+    void iterate(P const& path, Sink& sink) const
     {
-        niji::render(path, adaptor<Sink>{sink});
+        niji::iterate(path, adaptor<Sink, niji::path_point_t<P>>{sink});
     }
 
-    template<class Path, class Sink>
-    void inverse_render(Path const& path, Sink& sink) const
+    template<niji::BiPath P, class Sink>
+    void reverse_iterate(P const& path, Sink& sink) const
     {
-        niji::inverse_render(path, adaptor<Sink>{sink});
+        niji::reverse_iterate(path, adaptor<Sink, niji::path_point_t<P>>{sink});
     }
 };
 

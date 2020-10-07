@@ -15,10 +15,10 @@
 
 namespace niji
 {
-    template<class Node, class Alloc = std::pmr::polymorphic_allocator<Node>>
+    template<Point Node, class Alloc = std::pmr::polymorphic_allocator<Node>>
     class path : std::vector<Node, Alloc>
     {
-        template<class N, class A>
+        template<Point N, class A>
         friend class path;
 
         using nodes_base = std::vector<Node, Alloc>;

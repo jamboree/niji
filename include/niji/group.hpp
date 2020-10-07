@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,19 +7,18 @@
 #ifndef NIJI_GROUP_HPP_INCLUDED
 #define NIJI_GROUP_HPP_INCLUDED
 
-#include <boost/next_prior.hpp>
-#include <boost/container/deque.hpp>
-#include <niji/support/traits.hpp>
+#include <deque>
+#include <memory_resource>
+#include <niji/core.hpp>
 
 namespace niji
 {
-    template<class Path, class Alloc = std::allocator<Path> >
-    class group : boost::container::deque<Path, Alloc>
+    template<class Path, class Alloc = std::pmr::polymorphic_allocator<Path>>
+    class group : std::deque<Path, Alloc>
     {
-        using base_type = boost::container::deque<Path, Alloc>;
+        using base_type = std::deque<Path, Alloc>;
         
     public:
-        
         using point_type = path_point_t<Path>;
         using path_type = Path;
 
@@ -77,23 +76,17 @@ namespace niji
         // Traverse
         //----------------------------------------------------------------------
         template<class Sink>
-        void render(Sink& sink) const
+        void iterate(Sink& sink) const
         {
             for (auto const& path : *this)
-                niji::render(path, sink);
+                niji::iterate(path, sink);
         }
 
         template<class Sink>
-        void inverse_render(Sink& sink) const
+        void reverse_iterate(Sink& sink) const
         {
             for (auto const& path : *this)
-                niji::inverse_render(path, sink);
-        }
-
-        template<class Archive>
-        void serialize(Archive & ar, unsigned version)
-        {
-            ar & *static_cast<base_type*>(this);
+                niji::reverse_iterate(path, sink);
         }
     };
 }

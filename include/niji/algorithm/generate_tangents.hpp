@@ -11,6 +11,7 @@
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/bezier.hpp>
+#include <niji/support/range.hpp>
 
 namespace niji::detail
 {
@@ -21,7 +22,15 @@ namespace niji::detail
         invalid
     };
 
-    template<class T, class Range, class F>
+    template<class T>
+    inline vector<T> join_tangent(vector<T> a, vector<T> b)
+    {
+        a = vectors::unit(a);
+        b = vectors::unit(b);
+        return a == b ? a : vectors::unit(vectors::normal_cw(a - b));
+    }
+
+    template<class T, class IterRange, class F>
     struct tangents_sink
     {
         using point_t = point<T>;
@@ -29,9 +38,15 @@ namespace niji::detail
 
         static_assert(std::is_signed_v<T>);
 
-        tangents_sink(Range const& steps, F& f) : _steps(steps), _f(f)
+        tangents_sink(IterRange const& steps, F& f) : _steps(steps), _f(f)
         {
-            _offset = _steps ? _steps.next() : -1;
+            if (_steps.first == _steps.second)
+                _offset = -1;
+            else
+            {
+                _offset = *_steps.first;
+                ++_steps.first;
+            }
         }
 
         void move_to(point_t const& pt)
@@ -56,8 +71,7 @@ namespace niji::detail
 
         void quad_to(point_t const& pt1, point_t const& pt2)
         {
-            vector_t const v = pt2 - pt1;
-            if (step(v))
+            if (step(pt1 - _prev_pt))
             {
                 point_t pts[3] = {_prev_pt, pt1, pt2};
                 point_t chops[5];
@@ -72,13 +86,12 @@ namespace niji::detail
                     _f(chops[2], vectors::unit(chops[2] - chops[1]));
                 });
             }
-            update(pt2, v);
+            update(pt2, pt2 - pt1);
         }
 
         void cubic_to(point_t const& pt1, point_t const& pt2, point_t const& pt3)
         {
-            vector_t const v = pt3 - pt2;
-            if (step(v))
+            if (step(pt1 - _prev_pt))
             {
                 point_t pts[4] = {_prev_pt, pt1, pt2, pt3};
                 point_t chops[7];
@@ -93,21 +106,22 @@ namespace niji::detail
                     _f(chops[3], vectors::unit(chops[3] - chops[2]));
                 });
             }
-            update(pt3, v);
+            update(pt3, pt3 - pt2);
         }
         
         void end_open() {}
 
         void end_closed()
         {
-            line_to(_first_pt);
+            if (_prev_pt != _first_pt)
+                line_to(_first_pt);
             if (_head_status == status::valid)
             {
-                _f(_first_pt, vectors::unit(vectors::normal_cw(_first_tangent - _last_tangent)));
+                _f(_first_pt, join_tangent(_first_tangent, _last_tangent));
                 _head_status = status::invalid;
             }
         }
-        
+
     private:
         bool step(vector_t tangent)
         {
@@ -119,11 +133,12 @@ namespace niji::detail
                     _head_status = status::valid;
                 }
                 else
-                    _f(_prev_pt, vectors::unit(vectors::normal_cw(tangent - _last_tangent)));
+                    _f(_prev_pt, join_tangent(tangent, _last_tangent));
                 // Next offset.
-                while (_steps)
+                while (_steps.first != _steps.second)
                 {
-                    T const next = _steps.next();
+                    T const next = *_steps.first;
+                    ++_steps.first;
                     if (next > _length) [[likely]]
                     {
                         _offset = next - _length;
@@ -155,9 +170,10 @@ namespace niji::detail
                 return;
             }
             act(_offset, len);
-            while (_steps)
+            while (_steps.first != _steps.second)
             {
-                T const next = _steps.next();
+                T const next = *_steps.first;
+                ++_steps.first;
                 if (next >= _length)
                 {
                     _offset = next - _length;
@@ -171,42 +187,20 @@ namespace niji::detail
 
         T _offset, _length = 0;
         status _head_status = status::empty;
-        Range _steps;
+        IterRange _steps;
         F& _f;
         point_t _prev_pt, _first_pt;
         vector_t _last_tangent, _first_tangent;
     };
-
-    template<class I, class E>
-    struct fwd_range
-    {
-        I i;
-        E const e;
-
-        explicit operator bool() const
-        {
-            return i != e;
-        }
-
-        decltype(auto) next()
-        {
-            return *i++;
-        }
-    };
-
-    template<class I, class E>
-    fwd_range(I, E) -> fwd_range<I, E>;
 }
 
 namespace niji
 {
-    template<class Path, class Range, class F>
-    void generate_tangents(Path const& path, Range const& steps, F&& f)
+    template<class Path, class Steps, class F>
+    void generate_tangents(Path const& path, Steps const& steps, F&& f)
     {
-        using std::begin;
-        using std::end;
         using coord_t = path_coordinate_t<Path>;
-        detail::fwd_range range{begin(steps), end(steps)};
+        std::pair range{ranges::begin(steps), ranges::end(steps)};
         detail::tangents_sink<coord_t, decltype(range), F> sink(range, f);
         niji::iterate(path, sink);
     }

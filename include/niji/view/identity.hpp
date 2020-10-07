@@ -7,24 +7,15 @@
 #ifndef NIJI_VIEW_IDENTITY_HPP_INCLUDED
 #define NIJI_VIEW_IDENTITY_HPP_INCLUDED
 
-#include <niji/support/view.hpp>
-
 namespace niji
 {
-    struct identity_view : view<identity_view>
+    struct identity_view {};
+
+    template<class Path>
+    constexpr Path&& operator|(Path&& path, identity_view)
     {
-        template<Path P, class Sink>
-        static void iterate(P const& path, Sink& sink)
-        {
-             niji::iterate(path, sink);
-        }
-                
-        template<BiPath P, class Sink>
-        static void reverse_iterate(P const& path, Sink& sink)
-        {
-             niji::reverse_iterate(path, sink);
-        }
-    };
+        return std::forward<Path>(path);
+    }
 }
 
 namespace niji::views

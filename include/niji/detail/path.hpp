@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -12,7 +12,7 @@
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class It>
     struct iterator_range
@@ -303,7 +303,6 @@ namespace niji { namespace detail
         }
 
     private:
-        
         template<class Sink, class It, class IndexTags>
         static void iterate_impl(Sink& sink, It origin, It it, It end, IndexTags const& index_tags, bool is_closed)
         {
@@ -398,7 +397,6 @@ namespace niji { namespace detail
             }
 
         private:
-
             path_partition const* _rng;
             IndexIt _tit, _tlast;
             NodeIt _it;
@@ -438,10 +436,9 @@ namespace niji { namespace detail
         }
 
     private:
-
         iterator_range<NodeIt> _nodes;
         iterator_range<IndexIt> _index_tags;
     };
-}}
+}
 
 #endif
