@@ -605,10 +605,11 @@ namespace niji::bezier
     int chop_quad_at_extrema(const point<T> src[3], point<T> dst[5])
     {
         using std::abs;
+        constexpr index_constant<I> i;
 
-        T a = src[0].coord<I>();
-        T b = src[1].coord<I>();
-        T c = src[2].coord<I>();
+        T a = src[0].coord(i);
+        T b = src[1].coord(i);
+        T c = src[2].coord(i);
 
         if (numeric::is_not_monotonic(a, b, c))
         {
@@ -616,7 +617,7 @@ namespace niji::bezier
             if (numeric::valid_unit_divide(a - b, a - b - b + c, tValue))
             {
                 chop_quad_at(src, dst, tValue);
-                detail::flatten_double_quad_extrema(&dst[0].coord<I>());
+                detail::flatten_double_quad_extrema(&dst[0].coord(i));
                 return 1;
             }
             // If we get here, we need to force dst to be monotonic, even though
@@ -626,7 +627,7 @@ namespace niji::bezier
         dst[0] = src[0];
         dst[1] = src[1];
         dst[2] = src[2];
-        dst[1].coord<I>() = b;
+        dst[1].coord(i) = b;
         return 0;
     }
 
@@ -895,16 +896,17 @@ namespace niji::bezier
     template<int I, class T>
     int chop_cubic_at_extrema(const point<T> src[4], point<T> dst[10])
     {
+        constexpr index_constant<I> i;
         T tValues[2];
-        auto it = detail::find_cubic_extrema(src[0].coord<I>(), src[1].coord<I>(), src[2].coord<I>(), src[3].coord<I>(), tValues);
+        auto it = detail::find_cubic_extrema(src[0].coord(i), src[1].coord(i), src[2].coord(i), src[3].coord(i), tValues);
         int roots = int(it - tValues);
         chop_cubic_at(src, dst, tValues, it);
         if (dst && roots > 0)
         {
             // We do some cleanup to ensure our Y extrema are flat.
-            detail::flatten_double_cubic_extrema(&dst[0].coord<I>());
+            detail::flatten_double_cubic_extrema(&dst[0].coord(i));
             if (roots == 2)
-                detail::flatten_double_cubic_extrema(&dst[3].coord<I>());
+                detail::flatten_double_cubic_extrema(&dst[3].coord(i));
         }
         return roots;
     }

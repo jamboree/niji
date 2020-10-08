@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2016-2017 Jamboree
+    Copyright (c) 2016-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,8 +7,7 @@
 #ifndef NIJI_ALGORITHM_WINDING_HPP_INCLUDED
 #define NIJI_ALGORITHM_WINDING_HPP_INCLUDED
 
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
+#include <niji/core.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 
@@ -19,7 +18,7 @@ namespace niji
     {
         bool is_ccw = false;
 
-        void operator()(move_to_t, point<T> const& pt)
+        void move_to(point<T> const& pt)
         {
             // _pts[0] & _pts[3] don't need to be set here
             _pts[1] = pt;
@@ -30,27 +29,27 @@ namespace niji
             is_ccw = false;
         }
 
-        void operator()(line_to_t, point<T> const& pt)
+        void line_to(point<T> const& pt)
         {
             next(pt);
         }
 
-        void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
+        void quad_to(point<T> const& pt1, point<T> const& pt2)
         {
             next(pt1);
             next(pt2);
         }
 
-        void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
+        void cubic_to(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
         {
             next(pt1);
             next(pt2);
             next(pt3);
         }
 
-        void operator()(end_open_t) {}
+        void end_open() {}
 
-        void operator()(end_closed_t)
+        void end_closed()
         {
             if (_has_turn)
             {
@@ -85,12 +84,12 @@ namespace niji
         point<T> _pts[4];
     };
 
-    template<class Path>
-    bool is_ccw(Path const& path)
+    template<Path P>
+    bool is_ccw(P const& path)
     {
-        using coord_t = path_coordinate_t<Path>;
+        using coord_t = path_coordinate_t<P>;
         winding_sink<coord_t> sink;
-        niji::render(path, sink);
+        niji::iterate(path, sink);
         return sink.is_ccw;
     }
 }

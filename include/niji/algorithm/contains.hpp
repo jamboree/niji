@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2018 Jamboree
+    Copyright (c) 2018-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,8 +7,7 @@
 #ifndef NIJI_ALGORITHM_CONTAINS_HPP_INCLUDED
 #define NIJI_ALGORITHM_CONTAINS_HPP_INCLUDED
 
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
+#include <niji/core.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/bezier.hpp>
@@ -17,7 +16,7 @@
 // -------
 // The algorithms are borrowed from Skia, see "src/core/SkPath.cpp".
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T>
     inline bool check_on_curve(T x, T y, const point<T>& start, const point<T>& end)
@@ -154,14 +153,14 @@ namespace niji { namespace detail
     }
 
     template<int I, class T>
-    bool chop_mono_cubic_at_coord(const point<T> pts[4], T c, T& t)
+    bool chop_mono_cubic_at_coord(index_constant<I> i, const point<T> pts[4], T c, T& t)
     {
         T crv[4] =
         {
-            pts[0].coord<I>() - c,
-            pts[1].coord<I>() - c,
-            pts[2].coord<I>() - c,
-            pts[3].coord<I>() - c
+            pts[0].coord(i) - c,
+            pts[1].coord(i) - c,
+            pts[2].coord(i) - c,
+            pts[3].coord(i) - c
         };
 
         // Linear convergence, typically 16 iterations.
@@ -244,7 +243,7 @@ namespace niji { namespace detail
 
         // Compute the actual x(t) value.
         T t;
-        if (!chop_mono_cubic_at_coord<1>(pts, pt.y, t))
+        if (!chop_mono_cubic_at_coord(index<1>, pts, pt.y, t))
             return 0;
 
         T xt = bezier::cubic_eval(pts[0].x, pts[1].x, pts[2].x, pts[3].x, t);
@@ -279,52 +278,52 @@ namespace niji { namespace detail
 
         contains_sink(point<T> pt) : _pt(pt) {}
 
-        void operator()(move_to_t, point<T> const& pt)
+        void move_to(point<T> const& pt)
         {
             _first = _pt0 = pt;
         }
 
-        void operator()(line_to_t, point<T> const& pt1)
+        void line_to(point<T> const& pt1)
         {
             point<T> pts[2] = {_pt0, pt1};
             winding += winding_line(pts, _pt, on_curve_count);
             _pt0 = pt1;
         }
 
-        void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
+        void quad_to(point<T> const& pt1, point<T> const& pt2)
         {
             point<T> pts[3] = {_pt0, pt1, pt2};
             winding += winding_quad(pts, _pt, on_curve_count);
             _pt0 = pt2;
         }
 
-        void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
+        void cubic_to(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
         {
             point<T> pts[4] = {_pt0, pt1, pt2, pt3};
             winding += winding_cubic(pts, _pt, on_curve_count);
             _pt0 = pt3;
         }
 
-        void operator()(end_open_t) {}
+        void end_open() {}
 
-        void operator()(end_closed_t)
+        void end_closed()
         {
-            operator()(line_to_t{}, _first);
+            line_to(_first);
         }
 
     private:
         point<T> _pt, _pt0, _first;
     };
-}}
+}
 
 namespace niji
 {
-    template<class Path>
-    bool contains(Path const& path, path_point_t<Path> pt)
+    template<Path P>
+    bool contains(P const& path, path_point_t<P> pt)
     {
-        using coord_t = path_coordinate_t<Path>;
+        using coord_t = path_coordinate_t<P>;
         detail::contains_sink<coord_t> test{pt};
-        niji::render(path, test);
+        niji::iterate(path, test);
         if (test.winding)
             return true;
         if (test.on_curve_count <= 1)

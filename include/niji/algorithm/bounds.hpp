@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015-2017 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,17 +7,14 @@
 #ifndef NIJI_ALGORITHM_BOUNDS_HPP_INCLUDED
 #define NIJI_ALGORITHM_BOUNDS_HPP_INCLUDED
 
-#include <boost/assert.hpp>
-#include <boost/integer.hpp>
-#include <boost/numeric/conversion/bounds.hpp>
-#include <niji/render.hpp>
-#include <niji/support/command.hpp>
+#include <limits>
+#include <niji/core.hpp>
 #include <niji/support/vector.hpp>
 #include <niji/support/point.hpp>
 #include <niji/support/box.hpp>
 #include <niji/support/bezier.hpp>
 
-namespace niji { namespace detail
+namespace niji::detail
 {
     template<class T>
     struct bounds_sink
@@ -25,44 +22,46 @@ namespace niji { namespace detail
         point<T> min, max;
 
         bounds_sink()
-          : min(boost::numeric::bounds<T>::highest(), boost::numeric::bounds<T>::highest())
-          , max(boost::numeric::bounds<T>::lowest(), boost::numeric::bounds<T>::lowest())
+          : min(std::numeric_limits<T>::max(), std::numeric_limits<T>::max())
+          , max(std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest())
           , _moving(true)
         {}
 
-        void operator()(move_to_t, point<T> const& pt)
+        void move_to(point<T> const& pt)
         {
             _prev = pt;
             _moving = true;
         }
 
-        void operator()(line_to_t, point<T> const& pt)
+        void line_to(point<T> const& pt)
         {
             line_start();
             adjust(pt);
         }
 
-        void operator()(quad_to_t, point<T> const& pt1, point<T> const& pt2)
+        void quad_to(point<T> const& pt1, point<T> const& pt2)
         {
             line_start();
             adjust_quad(_prev, pt1, pt2);
         }
 
-        void operator()(cubic_to_t, point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
+        void cubic_to(point<T> const& pt1, point<T> const& pt2, point<T> const& pt3)
         {
             line_start();
             adjust_cubic(_prev, pt1, pt2, pt3);
         }
         
-        void operator()(end_tag) {}
+        void end_open() {}
+
+        void end_closed() {}
         
     private:
         void line_start()
         {
             if (_moving)
             {
-                adjust_coord2<0>(_prev.x);
-                adjust_coord2<1>(_prev.y);
+                adjust_coord2(index<0>, _prev.x);
+                adjust_coord2(index<1>, _prev.y);
                 _moving = false;
             }
         }
@@ -70,63 +69,57 @@ namespace niji { namespace detail
         void adjust_quad(point<T> const& a, point<T> const& b, point<T> const& c)
         {
             if (b.x < min.x || b.x > max.x)
-                adjust_quad_coord<0>(a, b, c);
+                adjust_quad_coord(index<0>, a, b, c);
             else
-                adjust_coord<0>(c.x);
+                adjust_coord(index<0>, c.x);
             if (b.y < min.y || b.y > max.y)
-                adjust_quad_coord<1>(a, b, c);
+                adjust_quad_coord(index<1>, a, b, c);
             else
-                adjust_coord<1>(c.y);
+                adjust_coord(index<1>, c.y);
             _prev = c;
         }
 
         void adjust_cubic(point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
         {
             if (b.x < min.x || b.x > max.x || c.x < min.x || c.x > max.x)
-                adjust_cubic_coord<0>(a, b, c, d);
+                adjust_cubic_coord(index<0>, a, b, c, d);
             if (b.y < min.y || b.y > max.y || c.y < min.y || c.y > max.y)
-                adjust_cubic_coord<1>(a, b, c, d);
+                adjust_cubic_coord(index<1>, a, b, c, d);
             adjust(d);
         }
         
-        template<int N>
-        void adjust_quad_coord(point<T> const& a, point<T> const& b, point<T> const& c)
+        template<int I>
+        void adjust_quad_coord(index_constant<I> i, point<T> const& a, point<T> const& b, point<T> const& c)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            T aa = get<N>(a), bb = get<N>(b), cc = get<N>(c);
+            T aa = a.coord(i), bb = b.coord(i), cc = c.coord(i);
             if (aa == bb || cc == bb)
             {
-                adjust_coord<N>(cc);
+                adjust_coord(i, cc);
                 return;
             }
             if (aa > bb)
             {
-                if (cc < bb && cc < get<N>(min))
+                if (cc < bb && cc < min.coord(i))
                 {
-                    set<N>(min, cc);
+                    min.coord(i) = cc;
                     return;
                 }
             } 
-            else if (cc > bb && cc > get<N>(max))
+            else if (cc > bb && cc > max.coord(i))
             {
-                set<N>(max, cc);
+                max.coord(i) = cc;
                 return;
             }
             T t;
             auto end = find_quad_extrema(aa, bb, cc, &t);
             if (&t != end)
-                adjust_coord<N>(bezier::quad_eval(aa, bb, cc, t));
+                adjust_coord(i, bezier::quad_eval(aa, bb, cc, t));
         }
         
-        template<int N>
-        void adjust_cubic_coord(point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
+        template<int I>
+        void adjust_cubic_coord(index_constant<I> i, point<T> const& a, point<T> const& b, point<T> const& c, point<T> const& d)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-
-            T aa = get<N>(a), bb = get<N>(b), cc = get<N>(c), dd = get<N>(d);
+            T aa = a.coord(i), bb = b.coord(i), cc = c.coord(i), dd = d.coord(i);
             T lo = aa, hi = dd;
             if (hi < lo)
                 std::swap(hi, lo);
@@ -136,56 +129,50 @@ namespace niji { namespace detail
             T extrama[2];
             auto end = find_cubic_extrema(aa, bb, cc, dd, extrama);
             for (auto it = extrama; it != end; ++it)
-                adjust_coord<N>(bezier::cubic_eval(aa, bb, cc, dd, *it));
+                adjust_coord(i, bezier::cubic_eval(aa, bb, cc, dd, *it));
         }
         
         void adjust(point<T> const& pt)
         {
-            adjust_coord<0>(pt.x);
-            adjust_coord<1>(pt.y);
+            adjust_coord(index<0>, pt.x);
+            adjust_coord(index<1>, pt.y);
             _prev = pt;
         }
         
-        template<int N>
-        void adjust_coord(T val)
+        template<int I>
+        void adjust_coord(index_constant<I> i, T val)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-            
-            if (val < get<N>(min))
-                set<N>(min, val);
-            else if (val > get<N>(max))
-                set<N>(max, val);
+            if (val < min.coord(i))
+                min.coord(i) = val;
+            else if (val > max.coord(i))
+                max.coord(i) = val;
         }
         
         // For init that max < min.
-        template<int N>
-        void adjust_coord2(T val)
+        template<int I>
+        void adjust_coord2(index_constant<I> i, T val)
         {
-            using boost::geometry::get;
-            using boost::geometry::set;
-            
-            if (val < get<N>(min))
-                set<N>(min, val);
-            if (val > get<N>(max))
-                set<N>(max, val);
+            if (val < min.coord(i))
+                min.coord(i) = val;
+            if (val > max.coord(i))
+                max.coord(i) = val;
         }
         
         point<T> _prev;
         bool _moving;
     };
-}}
+}
 
 namespace niji
 {
-    template<class Path>
-    auto bounds(Path const& path)
+    template<Path P>
+    auto bounds(P const& path)
     {
-        using coord_t = path_coordinate_t<Path>;
+        using coord_t = path_coordinate_t<P>;
         using point_t = point<coord_t>;
         detail::bounds_sink<coord_t> bounds;
-        niji::render(path, bounds);
-        return box<point_t>(bounds.min, bounds.max);
+        niji::iterate(path, bounds);
+        return box<coord_t>(bounds.min, bounds.max);
     }
 }
 

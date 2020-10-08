@@ -7,7 +7,9 @@
 #ifndef NIJI_SUPPORT_POINT_HPP_INCLUDED
 #define NIJI_SUPPORT_POINT_HPP_INCLUDED
 
+#include <cassert>
 #include <type_traits>
+#include <niji/support/index_constant.hpp>
 #include <niji/support/is_narrowing.hpp>
 
 namespace niji
@@ -47,29 +49,22 @@ namespace niji
 
         constexpr point(T x, T y) : x(x), y(y) {}
 
-        template<class U>
-        constexpr explicit(is_narrowing_v<U, T>) point(point<U> const& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
+        template<Point P>
+        constexpr explicit(is_narrowing_v<point_coordinate_t<P>, T>) point(P const& other)
+            : x(static_cast<T>(get_x(other))), y(static_cast<T>(get_y(other)))
+        {}
 
         void reset(T x2, T y2)
         {
             x = std::move(x2);
             y = std::move(y2);
         }
-        
-        template<std::size_t N>
-        T const& coord() const
-        {
-            static_assert(N < 2);
-            return *(&x + N);
-        }
-        
-        template<std::size_t N>
-        T& coord()
-        {
-            static_assert(N < 2);
-            return *(&x + N);
-        }
-        
+
+        constexpr T& coord(index_constant<0>) { return x; }
+        constexpr T& coord(index_constant<1>) { return y; }
+        constexpr T const& coord(index_constant<0>) const { return x; }
+        constexpr T const& coord(index_constant<1>) const { return y; }
+
         template<class U>
         bool operator==(point<U> const& other) const
         {

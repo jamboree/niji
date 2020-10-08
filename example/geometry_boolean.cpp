@@ -1,20 +1,18 @@
 /*//////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2015 Jamboree
+    Copyright (c) 2015-2020 Jamboree
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////*/
-// Boost.Geometry (aka GGL, Generic Geometry Library)
-// Copyright (c) 2011-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
 #include <fstream>
 #include <deque>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
-#include <niji/geometry/polygon.hpp>
 #include <niji/view/affine.hpp>
 #include <niji/algorithm/bounds.hpp>
+#include <niji/support/boost_geometry.hpp>
 #include "svg.hpp"
 
 int main()
@@ -85,6 +83,6 @@ int main()
     output.clear();
     boost::geometry::sym_difference(blue, green, output);
     output_svg("geometry_sym_difference.svg");
-    
+
     return 0;
 }

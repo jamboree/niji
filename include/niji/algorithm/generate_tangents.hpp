@@ -196,10 +196,10 @@ namespace niji::detail
 
 namespace niji
 {
-    template<class Path, class Steps, class F>
-    void generate_tangents(Path const& path, Steps const& steps, F&& f)
+    template<Path P, class Steps, class F>
+    void generate_tangents(P const& path, Steps const& steps, F&& f)
     {
-        using coord_t = path_coordinate_t<Path>;
+        using coord_t = path_coordinate_t<P>;
         std::pair range{ranges::begin(steps), ranges::end(steps)};
         detail::tangents_sink<coord_t, decltype(range), F> sink(range, f);
         niji::iterate(path, sink);

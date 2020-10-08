@@ -46,18 +46,18 @@ namespace niji
 
         coordinate_type width() const
         {
-            return length<0>();
+            return length(index<0>);
         }
 
         coordinate_type height() const
         {
-            return length<1>();
+            return length(index<1>);
         }
                 
-        template<std::size_t N>
-        coordinate_type length() const
+        template<int I>
+        coordinate_type length(index_constant<I> i) const
         {
-            return max_corner.coord<N>() - min_corner.coord<N>();
+            return max_corner.coord(i) - min_corner.coord(i);
         }
         
         bool empty() const
@@ -132,67 +132,60 @@ namespace niji
 
         void expand(box const& other)
         {
-            expand_coord<0>(other.min_corner.x, other.max_corner.x);
-            expand_coord<1>(other.min_corner.y, other.max_corner.y);
+            expand_coord(index<0>, other.min_corner.x, other.max_corner.x);
+            expand_coord(index<1>, other.min_corner.y, other.max_corner.y);
         }
         
-        template<std::size_t N>
-        void expand_coord(T min, T max)
+        template<int I>
+        void expand_coord(index_constant<I> i, T min, T max)
         {
-            auto min_ = min_corner.coord<N>();
-            auto max_ = max_corner.coord<N>();
+            auto min_ = min_corner.coord(i);
+            auto max_ = max_corner.coord(i);
             if (min_ == max_)
             {
-                min_corner.coord<N>() = min;
-                max_corner.coord<N>() = max;
+                min_corner.coord(i) = min;
+                max_corner.coord(i) = max;
                 return;
             }
             if (min < min_)
-                min_corner.coord<N>() = min;
+                min_corner.coord(i) = min;
             if (max > max_)
-                max_corner.coord<N>() = max;
+                max_corner.coord(i) = max;
         }
 
         bool clip(box const& other)
         {
             return
-                clip_coord<0>(other.min_corner.x, other.max_corner.x) &&
-                clip_coord<1>(other.min_corner.y, other.max_corner.y);
+                clip_coord(index<0>, other.min_corner.x, other.max_corner.x) &&
+                clip_coord(index<1>, other.min_corner.y, other.max_corner.y);
         }
 
-        template<std::size_t N>
-        bool clip_coord(T min, T max)
+        template<int I>
+        bool clip_coord(index_constant<I> i, T min, T max)
         {
-            auto min_ = min_corner.coord<N>();
-            auto max_ = max_corner.coord<N>();
+            auto min_ = min_corner.coord(i);
+            auto max_ = max_corner.coord(i);
             if (min_ >= max)
             {
-                max_corner.coord<N>() = min_;
+                max_corner.coord(i) = min_;
                 return false;
             }
             if (max_ <= min)
             {
-                min_corner.coord<N>() = max_;
+                min_corner.coord(i) = max_;
                 return false;
             }
             if (min_ < min)
-                min_corner.coord<N>() = min;
+                min_corner.coord(i) = min;
             if (max < max_)
-                max_corner.coord<N>() = max;
+                max_corner.coord(i) = max;
             return true;
         }
-        
-        template<std::size_t N>
-        point<T> const& corner() const
-        {
-            return *(&min_corner + N);
-        }
-        
-        template<std::size_t N>
-        point<T>& corner()
-        {
-            return *(&min_corner + N);
-        }
+
+        point<T>& corner(index_constant<0>) { return min_corner; }
+        point<T>& corner(index_constant<1>) { return max_corner; }
+        point<T> const& corner(index_constant<0>) const { return min_corner; }
+        point<T> const& corner(index_constant<1>) const { return max_corner; }
 
         point<T> center() const
         {
@@ -205,23 +198,23 @@ namespace niji
         template<class Sink>
         void iterate(Sink& sink) const
         {
-            iterate_impl<false>(sink);
+            iterate_impl(sink, max_corner, min_corner);
         }
 
         template<class Sink>
         void reverse_iterate(Sink& sink) const
         {
-            iterate_impl<true>(sink);
+            iterate_impl(sink, min_corner, max_corner);
         }
 
     private:
-        template<bool R, class Sink>
-        void iterate_impl(Sink& sink) const
+        template<class Sink>
+        void iterate_impl(Sink& sink, point<T> const& c1, point<T> const& c2) const
         {
             sink.move_to(min_corner);
-            sink.line_to(point<T>(corner<!R>().x, corner<R>().y));
+            sink.line_to(point<T>(c1.x, c2.y));
             sink.line_to(max_corner);
-            sink.line_to(point<T>(corner<R>().x, corner<!R>().y));
+            sink.line_to(point<T>(c2.x, c1.y));
             sink.end_closed();
         }
     };

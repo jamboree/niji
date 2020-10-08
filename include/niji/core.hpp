@@ -90,8 +90,8 @@ namespace niji
         using type = typename impl_path<T>::point_type;
     };
 
-    template<class Path>
-    using path_point_t = typename path_point<Path>::type;
+    template<Path T>
+    using path_point_t = typename path_point<T>::type;
 
     template<Path T>
     struct path_coordinate
@@ -99,8 +99,8 @@ namespace niji
         using type = point_coordinate_t<path_point_t<T>>;
     };
 
-    template<class Path>
-    using path_coordinate_t = typename path_coordinate<Path>::type;
+    template<Path T>
+    using path_coordinate_t = typename path_coordinate<T>::type;
 }
 
 namespace niji::detail
