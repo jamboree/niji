@@ -8,7 +8,6 @@
 #define NIJI_SINK_D2D_HPP_INCLUDED
 
 #include <boost/geometry/core/access.hpp>
-#include <niji/support/command.hpp>
 #include <d2d1.h>
 
 namespace niji
@@ -31,19 +30,19 @@ namespace niji
         }
         
         template<class Point>
-        void operator()(move_to_t, Point const& pt)
+        void move_to(Point const& pt)
         {
             geometry_sink->BeginFigure(cvt_point(pt), figure_begin);
         }
         
         template<class Point>
-        void operator()(line_to_t, Point const& pt)
+        void line_to(Point const& pt)
         {
             geometry_sink->AddLine(cvt_point(pt));
         }
         
         template<class Point>
-        void operator()(quad_to_t, Point const& pt1, Point const& pt2)
+        void quad_to(Point const& pt1, Point const& pt2)
         {
             geometry_sink->AddQuadraticBezier(
             {
@@ -52,7 +51,7 @@ namespace niji
         }
         
         template<class Point>
-        void operator()(cubic_to_t, Point const& pt1, Point const& pt2, Point const& pt3)
+        void cubic_to(Point const& pt1, Point const& pt2, Point const& pt3)
         {
             using boost::geometry::get;
             geometry_sink->AddBezier(
@@ -61,12 +60,12 @@ namespace niji
             });
         }
         
-        void operator()(end_open_t)
+        void end_open()
         {
             geometry_sink->EndFigure(::D2D1_FIGURE_END_OPEN);
         }
         
-        void operator()(end_closed_t)
+        void end_closed()
         {
             geometry_sink->EndFigure(::D2D1_FIGURE_END_CLOSED);
         }

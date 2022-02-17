@@ -102,8 +102,10 @@ namespace niji::detail
     void iterate_segment(Segment const& segment, Sink& sink)
     {
         using boost::geometry::get;
-        sink.move_to(get<0>(segment));
-        sink.line_to(get<1>(segment));
+        using boost::geometry::make;
+        using point_t = typename boost::geometry::point_type<Segment>::type;
+        sink.move_to(make<point_t>(get<0, 0>(segment), get<0, 1>(segment)));
+        sink.line_to(make<point_t>(get<1, 0>(segment), get<1, 1>(segment)));
         sink.end_open();
     }
 
