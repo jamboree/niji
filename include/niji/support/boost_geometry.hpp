@@ -11,6 +11,7 @@
 #include <niji/core.hpp>
 #include <niji/support/box.hpp>
 #include <niji/support/range.hpp>
+#include <boost/geometry/core/cs.hpp>
 #include <boost/geometry/core/tag.hpp>
 #include <boost/geometry/core/point_type.hpp>
 #include <boost/geometry/core/coordinate_type.hpp>
